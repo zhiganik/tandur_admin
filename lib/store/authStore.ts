@@ -5,14 +5,11 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   tempToken: string | null;
-  sessionToken: string | null;
-  needsVerification: boolean;
-  setTokens: (accessToken: string, refreshToken: string, needsVerification?: boolean) => void;
+  needsSetup: boolean;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   setTempToken: (token: string) => void;
   clearTempToken: () => void;
-  setSessionToken: (token: string) => void;
-  clearSessionToken: () => void;
-  setNeedsVerification: (value: boolean) => void;
+  setNeedsSetup: (value: boolean) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -23,17 +20,14 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       tempToken: null,
-      sessionToken: null,
-      needsVerification: false,
-      setTokens: (accessToken, refreshToken, needsVerification = false) =>
-        set({ accessToken, refreshToken, tempToken: null, sessionToken: null, needsVerification }),
+      needsSetup: false,
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken, tempToken: null }),
       setTempToken: (token) => set({ tempToken: token }),
       clearTempToken: () => set({ tempToken: null }),
-      setSessionToken: (token) => set({ sessionToken: token }),
-      clearSessionToken: () => set({ sessionToken: null }),
-      setNeedsVerification: (value) => set({ needsVerification: value }),
+      setNeedsSetup: (value) => set({ needsSetup: value }),
       logout: () => {
-        set({ accessToken: null, refreshToken: null, tempToken: null, sessionToken: null, needsVerification: false });
+        set({ accessToken: null, refreshToken: null, tempToken: null, needsSetup: false });
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
@@ -47,8 +41,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         tempToken: state.tempToken,
-        sessionToken: state.sessionToken,
-        needsVerification: state.needsVerification,
+        needsSetup: state.needsSetup,
       }),
     }
   )

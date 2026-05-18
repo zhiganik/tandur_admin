@@ -19,7 +19,7 @@ export default function ForceChangePasswordPage() {
   const router = useRouter();
   const { message } = App.useApp();
   const { t } = useI18n();
-  const { tempToken, setTokens } = useAuthStore();
+  const { tempToken, setTokens, setNeedsSetup } = useAuthStore();
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.sm;
   const [loading, setLoading] = useState(false);
@@ -41,12 +41,13 @@ export default function ForceChangePasswordPage() {
     setLoading(true);
     try {
       const data = await authApi.changePassword({ newPassword: values.newPassword });
-      setTokens(data.accessToken, data.refreshToken, true);
+      setTokens(data.accessToken, data.refreshToken);
+      setNeedsSetup(true);
       message.success(t.auth.passwordChanged);
-      router.push('/verify-phone');
+      router.push('/setup-phone');
+      // keep loading=true until page unmounts (redirect in progress)
     } catch {
       message.error(t.auth.passwordChangeFailed);
-    } finally {
       setLoading(false);
     }
   };

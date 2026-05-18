@@ -28,10 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const check = () => {
-      const { needsVerification } = useAuthStore.getState();
-      if (isAuthenticated() && needsVerification) {
-        router.replace('/verify-phone');
-      } else if (isAuthenticated()) {
+      if (isAuthenticated()) {
         router.replace('/users');
       } else {
         setHydrated(true);
@@ -61,9 +58,9 @@ export default function LoginPage() {
         setTokens(auth.accessToken, auth.refreshToken);
         router.push('/users');
       }
+      // keep loading=true until page unmounts (redirect in progress)
     } catch {
       message.error(t.auth.invalidCredentials);
-    } finally {
       setLoading(false);
     }
   };

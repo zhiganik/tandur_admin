@@ -4,10 +4,11 @@ import {
   AuthResponse,
   ChangePasswordRequest,
   LoginResponse,
+  LogoutRequest,
   RefreshRequest,
+  ResetPasswordRequest,
   SendPhoneRequest,
   VerifyPhoneRequest,
-  VerifyPhoneResponse,
   SendEmailRequest,
   VerifyEmailRequest,
 } from '@/types/api';
@@ -16,21 +17,30 @@ export const authApi = {
   login: (data: AdminLoginRequest) =>
     api.post<LoginResponse>('/admin/auth/login', data).then((r) => r.data),
 
+  logout: (data: LogoutRequest) =>
+    api.post('/admin/auth/logout', data).then((r) => r.data),
+
   refresh: (data: RefreshRequest) =>
-    api.post<AuthResponse>('/admin/auth/refresh', data).then((r) => r.data),
+    api.post<AuthResponse>('/auth/refresh', data).then((r) => r.data),
 
   changePassword: (data: ChangePasswordRequest) =>
     api.post<AuthResponse>('/admin/auth/change-password', data).then((r) => r.data),
 
+  requestPasswordReset: () =>
+    api.post<{ message: string }>('/me/password').then((r) => r.data),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    api.patch('/me/password', data).then((r) => r.data),
+
   sendPhone: (data: SendPhoneRequest) =>
-    api.post('/auth/phone', data).then((r) => r.data),
+    api.post<{ message: string; retryAfterSeconds: number }>('/me/phone', data).then((r) => r.data),
 
   verifyPhone: (data: VerifyPhoneRequest) =>
-    api.post<VerifyPhoneResponse>('/auth/phone/verify', data).then((r) => r.data),
+    api.patch('/me/phone', data).then((r) => r.data),
 
   sendEmail: (data: SendEmailRequest) =>
-    api.post('/auth/email', data).then((r) => r.data),
+    api.post<{ message: string; retryAfterSeconds: number }>('/me/email', data).then((r) => r.data),
 
   verifyEmail: (data: VerifyEmailRequest) =>
-    api.post<AuthResponse>('/auth/email/verify', data).then((r) => r.data),
+    api.patch('/me/email', data).then((r) => r.data),
 };

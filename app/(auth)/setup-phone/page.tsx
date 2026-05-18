@@ -10,46 +10,51 @@ import { useI18n } from '@/lib/i18n/I18nContext';
 
 const { Title, Text } = Typography;
 
-export default function VerifyPhonePage() {
+export default function SetupPhonePage() {
   const router = useRouter();
   const { message } = App.useApp();
   const { t } = useI18n();
-  const { setSessionToken, setNeedsVerification } = useAuthStore();
-
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.sm;
+
   const [phone, setPhone] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [retryAfter, setRetryAfter] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const check = () => {
-      if (!useAuthStore.getState().needsVerification) {
+      const state = useAuthStore.getState();
+      if (!state.isAuthenticated() || !state.needsSetup) {
         router.replace('/login');
       } else {
         setMounted(true);
       }
     };
 
-    if (useAuthStore.persist.hasHydrated()) {
-      check();
-      return;
-    }
-
+    if (useAuthStore.persist.hasHydrated()) { check(); return; }
     const unsub = useAuthStore.persist.onFinishHydration(check);
     return unsub;
   }, [router]);
 
+  // countdown timer
+  useEffect(() => {
+    if (retryAfter <= 0) return;
+    const timer = setTimeout(() => setRetryAfter((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfter]);
+
   if (!mounted) return null;
 
-  const handleSendCode = async (values: { phoneNumber: string }) => {
+  const handleSendCode = async (values: { newPhone: string }) => {
     setSendLoading(true);
     try {
-      await authApi.sendPhone({ phoneNumber: values.phoneNumber });
-      setPhone(values.phoneNumber);
+      const res = await authApi.sendPhone({ newPhone: values.newPhone });
+      setPhone(values.newPhone);
       setCodeSent(true);
+      setRetryAfter(res.retryAfterSeconds ?? 60);
       message.success(t.auth.codeSent);
     } catch {
       message.error(t.auth.sendCodeFailed);
@@ -61,31 +66,42 @@ export default function VerifyPhonePage() {
   const handleVerify = async (values: { code: string }) => {
     setVerifyLoading(true);
     try {
-      const data = await authApi.verifyPhone({ phoneNumber: phone, code: values.code });
-      setSessionToken(data.sessionToken);
-      setNeedsVerification(false);
+      await authApi.verifyPhone({ newPhone: phone, code: values.code });
       message.success(t.auth.phoneVerified);
       router.push('/verify-email');
+      // keep loading=true until page unmounts (redirect in progress)
     } catch {
       message.error(t.auth.verifyFailed);
-    } finally {
       setVerifyLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setSendLoading(true);
+    try {
+      const res = await authApi.sendPhone({ newPhone: phone });
+      setRetryAfter(res.retryAfterSeconds ?? 60);
+      message.success(t.auth.codeSent);
+    } catch {
+      message.error(t.auth.sendCodeFailed);
+    } finally {
+      setSendLoading(false);
     }
   };
 
   return (
     <Card style={{ width: isMobile ? '100%' : 400, margin: isMobile ? 16 : 0, boxSizing: 'border-box' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
-        {t.auth.verifyPhone}
+        {t.auth.setupPhone}
       </Title>
       <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>
-        {t.auth.verifyPhoneDesc}
+        {t.auth.setupPhoneDesc}
       </Text>
 
       {!codeSent ? (
         <Form layout="vertical" onFinish={handleSendCode}>
           <Form.Item
-            name="phoneNumber"
+            name="newPhone"
             label={t.auth.phoneNumber}
             rules={[{ required: true, message: t.auth.requiredPhone }]}
           >
@@ -99,15 +115,13 @@ export default function VerifyPhonePage() {
         </Form>
       ) : (
         <Form layout="vertical" onFinish={handleVerify}>
-          <Text style={{ display: 'block', marginBottom: 16 }}>
-            {phone}
-          </Text>
+          <Text style={{ display: 'block', marginBottom: 16 }}>{phone}</Text>
           <Form.Item
             name="code"
             label={t.auth.verificationCode}
             rules={[{ required: true, message: t.auth.requiredCode }]}
           >
-            <Input size="large" maxLength={6} />
+            <Input size="large" maxLength={6} autoFocus />
           </Form.Item>
           <Form.Item style={{ marginBottom: 8 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={verifyLoading}>
@@ -117,9 +131,11 @@ export default function VerifyPhonePage() {
           <Button
             type="link"
             block
-            onClick={() => setCodeSent(false)}
+            disabled={retryAfter > 0 || sendLoading}
+            loading={sendLoading}
+            onClick={handleResend}
           >
-            {t.auth.resendCode}
+            {retryAfter > 0 ? `${t.auth.resendCode} (${retryAfter}s)` : t.auth.resendCode}
           </Button>
         </Form>
       )}

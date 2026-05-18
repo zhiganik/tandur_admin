@@ -52,27 +52,30 @@ export interface UpdateProfileRequest {
   phone?: string | null;
 }
 
+export interface LogoutRequest {
+  refreshToken: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
 export interface SendPhoneRequest {
-  phoneNumber: string;
+  newPhone: string;
 }
 
 export interface VerifyPhoneRequest {
-  phoneNumber: string;
+  newPhone: string;
   code: string;
 }
 
-export interface VerifyPhoneResponse {
-  sessionToken: string;
-}
-
 export interface SendEmailRequest {
-  sessionToken: string;
-  email: string;
+  newEmail: string;
 }
 
 export interface VerifyEmailRequest {
-  sessionToken: string;
-  email: string;
+  newEmail: string;
   code: string;
 }
 

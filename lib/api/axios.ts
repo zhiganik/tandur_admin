@@ -51,7 +51,7 @@ api.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post(`${BASE_URL}/admin/auth/refresh`, { refreshToken });
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
         setTokens(data.accessToken, data.refreshToken);
         processQueue(null, data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;

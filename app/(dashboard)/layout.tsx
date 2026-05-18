@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
+import { authApi } from '@/lib/api/auth';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 const { Sider, Header, Content } = Layout;
@@ -35,7 +36,14 @@ function parseJwt(token: string | null): { name: string | null; email: string | 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout, accessToken } = useAuthStore();
+  const { logout, accessToken, refreshToken } = useAuthStore();
+
+  const handleLogout = async () => {
+    if (refreshToken) {
+      try { await authApi.logout({ refreshToken }); } catch { /* ignore */ }
+    }
+    logout();
+  };
   const { name: currentName, email: currentEmail } = parseJwt(accessToken);
   const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
@@ -45,10 +53,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const check = () => {
-      setMounted(true);
-      if (!useAuthStore.getState().isAuthenticated()) {
+      const state = useAuthStore.getState();
+      if (!state.isAuthenticated()) {
         router.replace('/login');
+        return;
       }
+      if (state.needsSetup) {
+        router.replace('/setup-phone');
+        return;
+      }
+      setMounted(true);
     };
 
     if (useAuthStore.persist.hasHydrated()) {
@@ -92,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       key: 'logout',
       icon: <LogoutOutlined />,
       label: t.nav.logout,
-      onClick: logout,
+      onClick: handleLogout,
       danger: true,
     },
   ];
