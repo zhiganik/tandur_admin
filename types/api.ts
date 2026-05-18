@@ -15,7 +15,6 @@ export interface ChangePasswordRequest {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  role: string;
   expiresAt: string;
 }
 
@@ -26,20 +25,55 @@ export interface PasswordChangeRequiredResponse {
 
 export type LoginResponse = AuthResponse | PasswordChangeRequiredResponse;
 
+export interface PagedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 // Users
 export interface User {
   id: string;
   firstName: string | null;
   lastName: string | null;
-  phoneNumber: string | null;
+  phone: string | null;
   email: string | null;
+  emailConfirmed: boolean;
+  phoneNumberConfirmed: boolean;
+  roles: string[];
   createdAt: string;
 }
 
 export interface UpdateProfileRequest {
   firstName?: string | null;
   lastName?: string | null;
-  phoneNumber?: string | null;
+  phone?: string | null;
+}
+
+export interface SendPhoneRequest {
+  phoneNumber: string;
+}
+
+export interface VerifyPhoneRequest {
+  phoneNumber: string;
+  code: string;
+}
+
+export interface VerifyPhoneResponse {
+  sessionToken: string;
+}
+
+export interface SendEmailRequest {
+  sessionToken: string;
+  email: string;
+}
+
+export interface VerifyEmailRequest {
+  sessionToken: string;
+  email: string;
+  code: string;
 }
 
 // Restaurants
@@ -53,6 +87,8 @@ export interface Restaurant {
   openTime: string;
   closeTime: string;
   isActive: boolean;
+  isOpenNow: boolean;
+  distanceKm: number | null;
 }
 
 export interface CreateRestaurantRequest {
@@ -76,4 +112,81 @@ export interface UpdateRestaurantRequest {
 
 export interface PatchRestaurantRequest {
   isActive?: boolean | null;
+}
+
+// Categories
+export interface Category {
+  id: string;
+  restaurantId: string;
+  name: string;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
+export interface UpdateCategoryRequest {
+  name: string;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
+export interface PatchCategoryRequest {
+  isVisible?: boolean | null;
+  sortOrder?: number | null;
+}
+
+// Menu
+export interface MenuItem {
+  id: string;
+  restaurantId: string;
+  categoryId: string;
+  name: string;
+  description: string | null;
+  shortDescription: string | null;
+  price: number;
+  currency: string | null;
+  imageUrl: string | null;
+  isAvailable: boolean;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface CreateMenuItemRequest {
+  restaurantId: string;
+  categoryId: string;
+  name: string;
+  description?: string | null;
+  shortDescription?: string | null;
+  price: number;
+  currency?: string | null;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
+export interface UpdateMenuItemRequest {
+  name: string;
+  description?: string | null;
+  shortDescription?: string | null;
+  price: number;
+  currency?: string | null;
+  categoryId: string;
+  sortOrder: number;
+  isAvailable: boolean;
+}
+
+export interface MenuDto {
+  categories: Category[];
+  items: PagedResult<MenuItem>;
+}
+
+export interface PatchMenuItemRequest {
+  isAvailable?: boolean | null;
+  price?: number | null;
+  categoryId?: string | null;
+  sortOrder?: number | null;
 }

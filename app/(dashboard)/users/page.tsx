@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Table, Button, Popconfirm, Typography, App, Spin } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser } from '@/lib/hooks/useUsers';
@@ -9,7 +10,8 @@ import { User } from '@/types/api';
 const { Title } = Typography;
 
 export default function UsersPage() {
-  const { data, isLoading } = useUsers();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useUsers(page);
   const deleteUser = useDeleteUser();
   const { message } = App.useApp();
   const { t } = useI18n();
@@ -38,8 +40,8 @@ export default function UsersPage() {
     },
     {
       title: t.users.phone,
-      dataIndex: 'phoneNumber',
-      key: 'phoneNumber',
+      dataIndex: 'phone',
+      key: 'phone',
       render: (v: string | null) => v || '—',
     },
     {
@@ -83,9 +85,15 @@ export default function UsersPage() {
       <Title level={4} style={{ marginBottom: 16 }}>{t.users.title}</Title>
       <Table
         rowKey="id"
-        dataSource={data}
+        dataSource={data?.data}
         columns={columns}
-        pagination={{ pageSize: 20, showTotal: (total) => `${t.common.total}: ${total}` }}
+        pagination={{
+          current: page,
+          pageSize: 20,
+          total: data?.total,
+          onChange: (p) => setPage(p),
+          showTotal: (total) => `${t.common.total}: ${total}`,
+        }}
       />
     </div>
   );
