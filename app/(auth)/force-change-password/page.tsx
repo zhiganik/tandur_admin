@@ -19,7 +19,7 @@ export default function ForceChangePasswordPage() {
   const router = useRouter();
   const { message } = App.useApp();
   const { t } = useI18n();
-  const { tempToken, clearTempToken, setTokens } = useAuthStore();
+  const { tempToken, setTokens } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -39,10 +39,9 @@ export default function ForceChangePasswordPage() {
     setLoading(true);
     try {
       const data = await authApi.changePassword({ newPassword: values.newPassword });
-      clearTempToken();
-      setTokens(data.accessToken, data.refreshToken, data.role);
+      setTokens(data.accessToken, data.refreshToken, true);
       message.success(t.auth.passwordChanged);
-      router.push('/users');
+      router.push('/verify-phone');
     } catch {
       message.error(t.auth.passwordChangeFailed);
     } finally {

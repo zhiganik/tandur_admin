@@ -2,8 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { restaurantsApi } from '@/lib/api/restaurants';
 import { CreateRestaurantRequest, UpdateRestaurantRequest } from '@/types/api';
 
-export const useRestaurants = () =>
-  useQuery({ queryKey: ['restaurants'], queryFn: restaurantsApi.getAll });
+export const useRestaurants = (page = 1, limit = 20) =>
+  useQuery({
+    queryKey: ['restaurants', page, limit],
+    queryFn: () => restaurantsApi.getAll(page, limit),
+  });
 
 export const useCreateRestaurant = () => {
   const queryClient = useQueryClient();

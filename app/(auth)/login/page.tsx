@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AuthResponse, PasswordChangeRequiredResponse } from '@/types/api';
 
 const { Title } = Typography;
@@ -18,10 +18,34 @@ interface LoginForm {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setTokens, setTempToken } = useAuthStore();
+  const { setTokens, setTempToken, isAuthenticated } = useAuthStore();
   const { message } = App.useApp();
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      const { needsVerification } = useAuthStore.getState();
+      if (isAuthenticated() && needsVerification) {
+        router.replace('/verify-phone');
+      } else if (isAuthenticated()) {
+        router.replace('/users');
+      } else {
+        setHydrated(true);
+      }
+    };
+
+    if (useAuthStore.persist.hasHydrated()) {
+      check();
+      return;
+    }
+
+    const unsub = useAuthStore.persist.onFinishHydration(check);
+    return unsub;
+  }, [isAuthenticated, router]);
+
+  if (!hydrated) return null;
 
   const onFinish = async (values: LoginForm) => {
     setLoading(true);
@@ -32,7 +56,7 @@ export default function LoginPage() {
         router.push('/force-change-password');
       } else {
         const auth = data as AuthResponse;
-        setTokens(auth.accessToken, auth.refreshToken, auth.role);
+        setTokens(auth.accessToken, auth.refreshToken);
         router.push('/users');
       }
     } catch {
