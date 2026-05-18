@@ -46,10 +46,23 @@ export interface User {
   createdAt: string;
 }
 
+export interface MeDto {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  emailConfirmed: boolean;
+  phone: string | null;
+  phoneNumberConfirmed: boolean;
+  dateOfBirth: string | null;
+  roles: string[];
+  createdAt: string;
+}
+
 export interface UpdateProfileRequest {
   firstName?: string | null;
   lastName?: string | null;
-  phone?: string | null;
+  dateOfBirth?: string | null;
 }
 
 export interface LogoutRequest {

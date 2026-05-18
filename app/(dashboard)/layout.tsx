@@ -7,36 +7,24 @@ import {
   UserOutlined,
   ShopOutlined,
   LogoutOutlined,
-  LockOutlined,
   UnorderedListOutlined,
   AppstoreOutlined,
   MenuOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { authApi } from '@/lib/api/auth';
+import { meApi } from '@/lib/api/me';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
-function parseJwt(token: string | null): { name: string | null; email: string | null } {
-  if (!token) return { name: null, email: null };
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return {
-      name: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? payload.name ?? null,
-      email: payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ?? payload.email ?? null,
-    };
-  } catch {
-    return { name: null, email: null };
-  }
-}
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout, accessToken, refreshToken } = useAuthStore();
+  const { logout, refreshToken } = useAuthStore();
 
   const handleLogout = async () => {
     if (refreshToken) {
@@ -44,10 +32,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     logout();
   };
-  const { name: currentName, email: currentEmail } = parseJwt(accessToken);
+
   const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [meName, setMeName] = useState<string | null>(null);
+  const [meEmail, setMeEmail] = useState<string | null>(null);
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.lg;
 
@@ -63,6 +53,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return;
       }
       setMounted(true);
+      meApi.get().then((me) => {
+        const full = [me.firstName, me.lastName].filter(Boolean).join(' ');
+        setMeName(full || null);
+        setMeEmail(me.email);
+      }).catch(() => {});
     };
 
     if (useAuthStore.persist.hasHydrated()) {
@@ -93,15 +88,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { key: '/restaurants', icon: <ShopOutlined />, label: t.nav.restaurants },
     { key: '/categories', icon: <AppstoreOutlined />, label: t.nav.categories },
     { key: '/menu', icon: <UnorderedListOutlined />, label: t.nav.menu },
+    { key: '/profile', icon: <IdcardOutlined />, label: t.nav.profile },
   ];
 
   const bottomItems = [
-    {
-      key: 'change-password',
-      icon: <LockOutlined />,
-      label: t.nav.changePassword,
-      onClick: () => router.push('/change-password'),
-    },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
@@ -195,12 +185,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setCollapsed(false)}
               />
             )}
-            {(currentName || currentEmail) ? (
+            {(meName || meEmail) ? (
               <Text type="secondary" style={{ fontSize: 13 }}>
                 <UserOutlined style={{ marginRight: 6 }} />
-                {currentName && <span style={{ color: '#000', fontWeight: 500 }}>{currentName}</span>}
-                {!isMobile && currentName && currentEmail && <span style={{ margin: '0 4px' }}>·</span>}
-                {!isMobile && currentEmail && <span>{currentEmail}</span>}
+                {meName && <span style={{ color: '#000', fontWeight: 500 }}>{meName}</span>}
+                {!isMobile && meName && meEmail && <span style={{ margin: '0 4px' }}>·</span>}
+                {!isMobile && meEmail && <span>{meEmail}</span>}
               </Text>
             ) : <span />}
           </div>
