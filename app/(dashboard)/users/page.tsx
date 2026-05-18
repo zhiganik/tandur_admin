@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Table, Button, Popconfirm, Typography, App, Spin } from 'antd';
+import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser } from '@/lib/hooks/useUsers';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -37,18 +38,21 @@ export default function UsersPage() {
       dataIndex: 'email',
       key: 'email',
       render: (v: string | null) => v || '—',
+      responsive: ['md'] as Breakpoint[],
     },
     {
       title: t.users.phone,
       dataIndex: 'phone',
       key: 'phone',
       render: (v: string | null) => v || '—',
+      responsive: ['sm'] as Breakpoint[],
     },
     {
       title: t.users.createdAt,
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (v: string) => new Date(v).toLocaleDateString('en-GB'),
+      responsive: ['lg'] as Breakpoint[],
     },
     {
       title: '',
@@ -87,6 +91,7 @@ export default function UsersPage() {
         rowKey="id"
         dataSource={data?.data}
         columns={columns}
+        scroll={{ x: true }}
         pagination={{
           current: page,
           pageSize: 20,

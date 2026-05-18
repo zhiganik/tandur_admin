@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, Switch } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Category } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -23,6 +23,8 @@ export default function CategoryModal({ open, onClose, onSubmit, initialValues, 
   const [form] = Form.useForm<CategoryFormValues>();
   const { t } = useI18n();
   const isEdit = !!initialValues;
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
 
   useEffect(() => {
     if (open) {
@@ -54,6 +56,9 @@ export default function CategoryModal({ open, onClose, onSubmit, initialValues, 
       cancelText={t.common.cancel}
       confirmLoading={loading}
       destroyOnClose
+      width={isMobile ? '100%' : undefined}
+      style={isMobile ? { top: 0, margin: 0, maxWidth: '100vw', padding: 0 } : undefined}
+      styles={isMobile ? { body: { maxHeight: '75vh', overflowY: 'auto' } } : undefined}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item

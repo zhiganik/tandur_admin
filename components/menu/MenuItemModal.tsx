@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, Switch, Select } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Select, Grid } from 'antd';
 import { useEffect } from 'react';
 import { MenuItem, Category } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -29,6 +29,8 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
   const [form] = Form.useForm<MenuItemFormValues>();
   const { t } = useI18n();
   const isEdit = !!initialValues;
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
 
   useEffect(() => {
     if (open) {
@@ -65,7 +67,9 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
       cancelText={t.common.cancel}
       confirmLoading={loading}
       destroyOnClose
-      width={560}
+      width={isMobile ? '100%' : 560}
+      style={isMobile ? { top: 0, margin: 0, maxWidth: '100vw', padding: 0 } : undefined}
+      styles={isMobile ? { body: { maxHeight: '75vh', overflowY: 'auto' } } : undefined}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
@@ -91,19 +95,19 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
             placeholder={t.menu.requireCategory}
           />
         </Form.Item>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
           <Form.Item
             name="price"
             label={t.menu.price}
             rules={[{ required: true, message: t.menu.requirePrice }]}
-            style={{ flex: 1 }}
+            style={{ flex: isMobile ? undefined : 1 }}
           >
             <InputNumber min={0} precision={2} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="currency" label={t.menu.currency} style={{ width: 100 }}>
+          <Form.Item name="currency" label={t.menu.currency} style={{ width: isMobile ? '100%' : 100 }}>
             <Input />
           </Form.Item>
-          <Form.Item name="sortOrder" label={t.menu.sortOrder} style={{ width: 100 }}>
+          <Form.Item name="sortOrder" label={t.menu.sortOrder} style={{ width: isMobile ? '100%' : 100 }}>
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
         </div>

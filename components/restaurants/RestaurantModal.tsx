@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, TimePicker, Row, Col } from 'antd';
+import { Modal, Form, Input, InputNumber, TimePicker, Row, Col, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Restaurant } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -28,6 +28,8 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
   const [form] = Form.useForm();
   const { t } = useI18n();
   const isEdit = !!initialValues;
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
 
   useEffect(() => {
     if (open && initialValues) {
@@ -60,6 +62,9 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
       cancelText={t.common.cancel}
       confirmLoading={loading}
       destroyOnClose
+      width={isMobile ? '100%' : undefined}
+      style={isMobile ? { top: 0, margin: 0, maxWidth: '100vw', padding: 0 } : undefined}
+      styles={isMobile ? { body: { maxHeight: '75vh', overflowY: 'auto' } } : undefined}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
@@ -77,7 +82,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
           <Input />
         </Form.Item>
         <Row gutter={12}>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               name="latitude"
               label={t.restaurants.latitude}
@@ -86,7 +91,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               name="longitude"
               label={t.restaurants.longitude}
@@ -104,7 +109,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
           <Input placeholder="America/New_York" />
         </Form.Item>
         <Row gutter={12}>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               name="openTime"
               label={t.restaurants.openTime}
@@ -113,7 +118,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
               <TimePicker style={{ width: '100%' }} format="HH:mm" />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               name="closeTime"
               label={t.restaurants.closeTime}

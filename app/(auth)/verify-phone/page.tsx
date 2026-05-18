@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Form, Input, Button, Typography, App } from 'antd';
+import { Card, Form, Input, Button, Typography, App, Grid } from 'antd';
 import { PhoneOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -16,6 +16,8 @@ export default function VerifyPhonePage() {
   const { t } = useI18n();
   const { setSessionToken, setNeedsVerification } = useAuthStore();
 
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
   const [phone, setPhone] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function VerifyPhonePage() {
   };
 
   return (
-    <Card style={{ width: 400 }}>
+    <Card style={{ width: isMobile ? '100%' : 400, margin: isMobile ? 16 : 0, boxSizing: 'border-box' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
         {t.auth.verifyPhone}
       </Title>

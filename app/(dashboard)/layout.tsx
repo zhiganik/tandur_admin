@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Layout, Menu, Typography } from 'antd';
+import { Layout, Menu, Typography, Grid, Button } from 'antd';
 import {
   UserOutlined,
   ShopOutlined,
@@ -10,6 +10,7 @@ import {
   LockOutlined,
   UnorderedListOutlined,
   AppstoreOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -34,10 +35,13 @@ function parseJwt(token: string | null): { name: string | null; email: string | 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, logout, accessToken } = useAuthStore();
+  const { logout, accessToken } = useAuthStore();
   const { name: currentName, email: currentEmail } = parseJwt(accessToken);
   const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.lg;
 
   useEffect(() => {
     const check = () => {
@@ -55,6 +59,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const unsub = useAuthStore.persist.onFinishHydration(check);
     return unsub;
   }, [router]);
+
+  // Auto-collapse sidebar when switching to mobile
+  useEffect(() => {
+    if (isMobile) setCollapsed(true);
+    else setCollapsed(false);
+  }, [isMobile]);
 
   if (!mounted) return null;
 
@@ -89,10 +99,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+      {/* Overlay mask — closes sidebar when tapping outside on mobile */}
+      {isMobile && !collapsed && (
+        <div
+          onClick={() => setCollapsed(true)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999,
+            background: 'rgba(0,0,0,0.45)',
+          }}
+        />
+      )}
       <Sider
         theme="dark"
         width={220}
-        style={{ display: 'flex', flexDirection: 'column' }}
+        collapsible
+        collapsed={collapsed}
+        collapsedWidth={0}
+        trigger={null}
+        onCollapse={setCollapsed}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          ...(isMobile ? {
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            height: '100vh',
+            zIndex: 1000,
+          } : {}),
+        }}
       >
         <div
           style={{
@@ -114,7 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             mode="inline"
             selectedKeys={[selectedKey]}
             items={menuItems}
-            onClick={({ key }) => router.push(key)}
+            onClick={({ key }) => { router.push(key); if (isMobile) setCollapsed(true); }}
           />
           <Menu
             theme="dark"
@@ -124,28 +162,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           />
         </div>
       </Sider>
-      <Layout>
+      <Layout style={isMobile ? { marginLeft: 0 } : {}}>
         <Header
           style={{
             background: '#fff',
-            padding: '0 24px',
+            padding: `0 ${isMobile ? 12 : 24}px`,
             borderBottom: '1px solid #f0f0f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          {(currentName || currentEmail) ? (
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              <UserOutlined style={{ marginRight: 6 }} />
-              {currentName && <span style={{ color: '#000', fontWeight: 500 }}>{currentName}</span>}
-              {currentName && currentEmail && <span style={{ margin: '0 4px' }}>·</span>}
-              {currentEmail && <span>{currentEmail}</span>}
-            </Text>
-          ) : <span />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isMobile && (
+              <Button
+                type="text"
+                icon={<MenuOutlined />}
+                onClick={() => setCollapsed(false)}
+              />
+            )}
+            {(currentName || currentEmail) ? (
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                <UserOutlined style={{ marginRight: 6 }} />
+                {currentName && <span style={{ color: '#000', fontWeight: 500 }}>{currentName}</span>}
+                {!isMobile && currentName && currentEmail && <span style={{ margin: '0 4px' }}>·</span>}
+                {!isMobile && currentEmail && <span>{currentEmail}</span>}
+              </Text>
+            ) : <span />}
+          </div>
           <LanguageSwitcher />
         </Header>
-        <Content style={{ margin: 24 }}>
+        <Content style={{ margin: isMobile ? 12 : 24 }}>
           {children}
         </Content>
       </Layout>

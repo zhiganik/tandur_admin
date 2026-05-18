@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Form, Input, Button, Typography, App } from 'antd';
+import { Card, Form, Input, Button, Typography, App, Grid } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authApi } from '@/lib/api/auth';
@@ -29,6 +29,8 @@ export default function VerifyEmailPage() {
   const { t } = useI18n();
   const { sessionToken, accessToken, clearSessionToken, logout } = useAuthStore();
 
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
   const [codeSent, setCodeSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -90,7 +92,7 @@ export default function VerifyEmailPage() {
   if (!mounted || !sessionToken) return null;
 
   return (
-    <Card style={{ width: 400 }}>
+    <Card style={{ width: isMobile ? '100%' : 400, margin: isMobile ? 16 : 0, boxSizing: 'border-box' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
         {t.auth.verifyEmail}
       </Title>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Form, Input, Button, Typography, App } from 'antd';
+import { Card, Form, Input, Button, Typography, App, Grid } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -20,6 +20,8 @@ export default function ForceChangePasswordPage() {
   const { message } = App.useApp();
   const { t } = useI18n();
   const { tempToken, setTokens } = useAuthStore();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -50,7 +52,7 @@ export default function ForceChangePasswordPage() {
   };
 
   return (
-    <Card style={{ width: 400 }}>
+    <Card style={{ width: isMobile ? '100%' : 400, margin: isMobile ? 16 : 0, boxSizing: 'border-box' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
         {t.auth.changePassword}
       </Title>

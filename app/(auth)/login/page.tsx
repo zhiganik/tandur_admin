@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Form, Input, Button, Typography, App } from 'antd';
+import { Card, Form, Input, Button, Typography, App, Grid } from 'antd';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
@@ -23,6 +23,8 @@ export default function LoginPage() {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
 
   useEffect(() => {
     const check = () => {
@@ -67,7 +69,7 @@ export default function LoginPage() {
   };
 
   return (
-    <Card style={{ width: 400 }}>
+    <Card style={{ width: isMobile ? '100%' : 400, margin: isMobile ? 16 : 0, boxSizing: 'border-box' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 24 }}>
         {t.auth.title}
       </Title>
