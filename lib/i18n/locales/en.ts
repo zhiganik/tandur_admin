@@ -85,6 +85,7 @@ const en = {
     verifiedSuccess: 'Verified successfully',
     newPhone: 'New phone number',
     requiredPhone: 'Enter phone number',
+    newEmail: 'New email address',
   },
   users: {
     title: 'Users',

@@ -140,14 +140,11 @@ export default function ProfilePage() {
         {t.profile.changePassword}
       </Button>
 
-      {me?.email && (
-        <VerifyEmailModal
-          open={verifyEmailOpen}
-          onClose={() => setVerifyEmailOpen(false)}
-          email={me.email}
-          onSuccess={fetchMe}
-        />
-      )}
+      <VerifyEmailModal
+        open={verifyEmailOpen}
+        onClose={() => setVerifyEmailOpen(false)}
+        onSuccess={fetchMe}
+      />
       <VerifyPhoneModal
         open={verifyPhoneOpen}
         onClose={() => setVerifyPhoneOpen(false)}

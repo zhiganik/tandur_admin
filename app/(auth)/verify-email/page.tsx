@@ -27,6 +27,7 @@ export default function VerifyEmailPage() {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.sm;
 
+  const [form] = Form.useForm();
   const [email, setEmail] = useState<string | null>(null);
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -105,7 +106,7 @@ export default function VerifyEmailPage() {
         {t.auth.verifyEmailDesc}
       </Text>
 
-      <Form layout="vertical" onFinish={handleVerify}>
+      <Form form={form} layout="vertical" onFinish={handleVerify}>
         <Text style={{ display: 'block', marginBottom: 16 }}>
           <MailOutlined style={{ marginRight: 8 }} />
           {email}
@@ -115,7 +116,16 @@ export default function VerifyEmailPage() {
           label={t.auth.verificationCode}
           rules={[{ required: true, message: t.auth.requiredCode }]}
         >
-          <Input size="large" maxLength={6} autoFocus />
+          <Input
+            size="large"
+            maxLength={6}
+            autoFocus
+            inputMode="numeric"
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '');
+              form.setFieldValue('code', val);
+            }}
+          />
         </Form.Item>
         <Form.Item style={{ marginBottom: 8 }}>
           <Button type="primary" htmlType="submit" block size="large" loading={verifyLoading}>

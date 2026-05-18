@@ -17,6 +17,8 @@ export default function SetupPhonePage() {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.sm;
 
+  const [phoneForm] = Form.useForm();
+  const [codeForm] = Form.useForm();
   const [phone, setPhone] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
@@ -99,13 +101,22 @@ export default function SetupPhonePage() {
       </Text>
 
       {!codeSent ? (
-        <Form layout="vertical" onFinish={handleSendCode}>
+        <Form form={phoneForm} layout="vertical" onFinish={handleSendCode}>
           <Form.Item
             name="newPhone"
             label={t.auth.phoneNumber}
             rules={[{ required: true, message: t.auth.requiredPhone }]}
           >
-            <Input prefix={<PhoneOutlined />} size="large" placeholder="+380XXXXXXXXX" />
+            <Input
+              prefix={<PhoneOutlined />}
+              size="large"
+              placeholder="+380XXXXXXXXX"
+              onChange={(e) => {
+                let val = e.target.value.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+                if (val && !val.startsWith('+')) val = '+' + val;
+                phoneForm.setFieldValue('newPhone', val);
+              }}
+            />
           </Form.Item>
           <Form.Item style={{ marginBottom: 0 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={sendLoading}>
@@ -114,14 +125,23 @@ export default function SetupPhonePage() {
           </Form.Item>
         </Form>
       ) : (
-        <Form layout="vertical" onFinish={handleVerify}>
+        <Form form={codeForm} layout="vertical" onFinish={handleVerify}>
           <Text style={{ display: 'block', marginBottom: 16 }}>{phone}</Text>
           <Form.Item
             name="code"
             label={t.auth.verificationCode}
             rules={[{ required: true, message: t.auth.requiredCode }]}
           >
-            <Input size="large" maxLength={6} autoFocus />
+            <Input
+              size="large"
+              maxLength={6}
+              autoFocus
+              inputMode="numeric"
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                codeForm.setFieldValue('code', val);
+              }}
+            />
           </Form.Item>
           <Form.Item style={{ marginBottom: 8 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={verifyLoading}>

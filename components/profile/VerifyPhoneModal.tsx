@@ -102,7 +102,16 @@ export default function VerifyPhoneModal({ open, onClose, onSuccess }: Props) {
             label={t.profile.newPhone}
             rules={[{ required: true, message: t.profile.requiredPhone }]}
           >
-            <Input prefix={<PhoneOutlined />} size="large" placeholder="+380XXXXXXXXX" />
+            <Input
+              prefix={<PhoneOutlined />}
+              size="large"
+              placeholder="+380XXXXXXXXX"
+              onChange={(e) => {
+                let val = e.target.value.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+                if (val && !val.startsWith('+')) val = '+' + val;
+                phoneForm.setFieldValue('newPhone', val);
+              }}
+            />
           </Form.Item>
           <Form.Item style={{ marginBottom: 0 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={sendLoading}>
@@ -118,7 +127,16 @@ export default function VerifyPhoneModal({ open, onClose, onSuccess }: Props) {
             label={t.auth.verificationCode}
             rules={[{ required: true, message: t.auth.requiredCode }]}
           >
-            <Input size="large" maxLength={6} autoFocus />
+            <Input
+              size="large"
+              maxLength={6}
+              autoFocus
+              inputMode="numeric"
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                codeForm.setFieldValue('code', val);
+              }}
+            />
           </Form.Item>
           <Form.Item style={{ marginBottom: 8 }}>
             <Button type="primary" htmlType="submit" block size="large" loading={verifyLoading}>
