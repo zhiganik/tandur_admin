@@ -15,7 +15,7 @@ import {
 import { useAuthStore } from '@/lib/store/authStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { authApi } from '@/lib/api/auth';
-import { meApi } from '@/lib/api/me';
+import { useMe } from '@/lib/hooks/useMe';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 const { Sider, Header, Content } = Layout;
@@ -36,8 +36,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [meName, setMeName] = useState<string | null>(null);
-  const [meEmail, setMeEmail] = useState<string | null>(null);
+  const { data: meData } = useMe();
+  const meName = meData ? [meData.firstName, meData.lastName].filter(Boolean).join(' ') || null : null;
+  const meEmail = meData?.email ?? null;
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.lg;
 
@@ -53,11 +54,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return;
       }
       setMounted(true);
-      meApi.get().then((me) => {
-        const full = [me.firstName, me.lastName].filter(Boolean).join(' ');
-        setMeName(full || null);
-        setMeEmail(me.email);
-      }).catch(() => {});
     };
 
     if (useAuthStore.persist.hasHydrated()) {

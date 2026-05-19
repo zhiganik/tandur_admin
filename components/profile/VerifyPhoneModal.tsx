@@ -3,7 +3,7 @@
 import { Modal, Form, Input, Button, Grid } from 'antd';
 import { App } from 'antd';
 import { PhoneOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { authApi } from '@/lib/api/auth';
 import { useI18n } from '@/lib/i18n/I18nContext';
 
@@ -28,11 +28,11 @@ export default function VerifyPhoneModal({ open, onClose, onSuccess }: Props) {
   const [retryAfter, setRetryAfter] = useState(0);
 
   // countdown
-  useState(() => {
+  useEffect(() => {
     if (retryAfter <= 0) return;
     const timer = setTimeout(() => setRetryAfter((s) => s - 1), 1000);
     return () => clearTimeout(timer);
-  });
+  }, [retryAfter]);
 
   const handleClose = () => {
     setStep('phone');
@@ -134,6 +134,7 @@ export default function VerifyPhoneModal({ open, onClose, onSuccess }: Props) {
               inputMode="numeric"
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '');
+                e.target.value = val;
                 codeForm.setFieldValue('code', val);
               }}
             />

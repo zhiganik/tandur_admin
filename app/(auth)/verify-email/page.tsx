@@ -123,6 +123,7 @@ export default function VerifyEmailPage() {
             inputMode="numeric"
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '');
+              e.target.value = val;
               form.setFieldValue('code', val);
             }}
           />

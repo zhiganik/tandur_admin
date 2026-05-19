@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Form, Input, Button, Typography, App, Alert } from 'antd';
+import { Card, Form, Input, Button, Typography, App, Alert, Grid } from 'antd';
 import { LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
@@ -15,6 +15,8 @@ export default function ChangePasswordPage() {
   const { message } = App.useApp();
   const { t } = useI18n();
   const { logout } = useAuthStore();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.sm;
   const [step, setStep] = useState<'request' | 'reset'>('request');
   const [requestLoading, setRequestLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -46,7 +48,7 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, width: '100%' }}>
+    <div style={{ maxWidth: 400, width: '100%', margin: isMobile ? '0 4px' : 0 }}>
       <Button
         icon={<ArrowLeftOutlined />}
         type="text"

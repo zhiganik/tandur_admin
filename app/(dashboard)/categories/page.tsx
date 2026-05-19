@@ -27,7 +27,7 @@ export default function CategoriesIndexPage() {
       <List
         bordered
         dataSource={data?.data}
-        style={{ maxWidth: 480, background: '#fff' }}
+        style={{ maxWidth: 480, width: '100%', background: '#fff' }}
         renderItem={(r) => (
           <List.Item
             actions={[

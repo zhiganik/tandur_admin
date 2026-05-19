@@ -139,6 +139,7 @@ export default function SetupPhonePage() {
               inputMode="numeric"
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '');
+                e.target.value = val;
                 codeForm.setFieldValue('code', val);
               }}
             />

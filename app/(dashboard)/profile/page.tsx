@@ -6,7 +6,7 @@ import { DatePicker } from 'antd';
 import { useEffect, useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import { meApi } from '@/lib/api/me';
-import { MeDto } from '@/types/api';
+import { useMe, useInvalidateMe } from '@/lib/hooks/useMe';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import VerifyEmailModal from '@/components/profile/VerifyEmailModal';
 import VerifyPhoneModal from '@/components/profile/VerifyPhoneModal';
@@ -27,27 +27,21 @@ export default function ProfilePage() {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.sm;
 
-  const [me, setMe] = useState<MeDto | null>(null);
+  const { data: me } = useMe();
+  const invalidateMe = useInvalidateMe();
   const [saveLoading, setSaveLoading] = useState(false);
   const [verifyEmailOpen, setVerifyEmailOpen] = useState(false);
   const [verifyPhoneOpen, setVerifyPhoneOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
-  const fetchMe = async () => {
-    try {
-      const data = await meApi.get();
-      setMe(data);
-      form.setFieldsValue({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        dateOfBirth: data.dateOfBirth ? dayjs(data.dateOfBirth) : null,
-      });
-    } catch {
-      message.error(t.common.error);
-    }
-  };
-
-  useEffect(() => { fetchMe(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!me) return;
+    form.setFieldsValue({
+      firstName: me.firstName,
+      lastName: me.lastName,
+      dateOfBirth: me.dateOfBirth ? dayjs(me.dateOfBirth) : null,
+    });
+  }, [me, form]);
 
   const handleSave = async (values: ProfileForm) => {
     setSaveLoading(true);
@@ -57,7 +51,7 @@ export default function ProfilePage() {
         lastName: values.lastName || null,
         dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : null,
       });
-      await fetchMe();
+      await invalidateMe();
       message.success(t.profile.saveSuccess);
     } catch {
       message.error(t.profile.saveFailed);
@@ -99,7 +93,7 @@ export default function ProfilePage() {
         <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
           <MailOutlined style={{ marginRight: 6 }} />Email
         </Text>
-        <Space>
+        <Space wrap>
           <Text>{me?.email ?? '—'}</Text>
           {me?.emailConfirmed && (
             <Text style={{ color: '#52c41a' }}>
@@ -117,7 +111,7 @@ export default function ProfilePage() {
         <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
           <PhoneOutlined style={{ marginRight: 6 }} />Phone
         </Text>
-        <Space>
+        <Space wrap>
           <Text>{me?.phone ?? '—'}</Text>
           {me?.phoneNumberConfirmed && (
             <Text style={{ color: '#52c41a' }}>
@@ -143,12 +137,12 @@ export default function ProfilePage() {
       <VerifyEmailModal
         open={verifyEmailOpen}
         onClose={() => setVerifyEmailOpen(false)}
-        onSuccess={fetchMe}
+        onSuccess={invalidateMe}
       />
       <VerifyPhoneModal
         open={verifyPhoneOpen}
         onClose={() => setVerifyPhoneOpen(false)}
-        onSuccess={fetchMe}
+        onSuccess={invalidateMe}
       />
       <ChangePasswordModal
         open={changePasswordOpen}

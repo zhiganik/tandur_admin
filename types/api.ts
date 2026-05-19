@@ -42,6 +42,7 @@ export interface User {
   email: string | null;
   emailConfirmed: boolean;
   phoneNumberConfirmed: boolean;
+  dateOfBirth: string | null;
   roles: string[];
   createdAt: string;
 }
