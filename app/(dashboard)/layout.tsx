@@ -30,7 +30,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (refreshToken) {
       try { await authApi.logout({ refreshToken }); } catch { /* ignore */ }
     }
-    useRestaurantStore.getState().clear();
     logout();
   };
 

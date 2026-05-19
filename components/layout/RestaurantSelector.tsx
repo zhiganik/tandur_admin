@@ -9,21 +9,15 @@ import { useRestaurantStore } from '@/lib/store/restaurantStore';
 const { Text } = Typography;
 
 export default function RestaurantSelector() {
-  const { data, isLoading } = useAllRestaurants();
+  const { data, isLoading, isSuccess } = useAllRestaurants();
   const { selectedId, setSelectedId } = useRestaurantStore();
 
   useEffect(() => {
-    if (!data?.data) return;
-    const list = data.data;
-    if (list.length === 0) {
-      setSelectedId(null);
-      return;
-    }
-    const found = list.some((r) => r.id === selectedId);
-    if (!found) {
-      setSelectedId(list[0].id);
-    }
-  }, [data, selectedId, setSelectedId]);
+    if (!isSuccess || !data?.data?.length) return;
+    // Only auto-select if nothing is selected or saved id is gone from the list
+    if (selectedId && data.data.some((r) => r.id === selectedId)) return;
+    setSelectedId(data.data[0].id);
+  }, [isSuccess]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading || !data?.data) return null;
 

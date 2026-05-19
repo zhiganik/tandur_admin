@@ -75,7 +75,7 @@ export default function VerifyEmailPage() {
       await authApi.verifyEmail({ newEmail: email, code: values.code });
       useAuthStore.getState().setNeedsSetup(false);
       message.success(t.auth.emailVerified);
-      router.push('/users');
+      router.push('/home');
       // keep loading=true until page unmounts (redirect in progress)
     } catch {
       message.error(t.auth.verifyFailed);

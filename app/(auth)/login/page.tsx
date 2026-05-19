@@ -5,6 +5,7 @@ import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useRestaurantStore } from '@/lib/store/restaurantStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { useState, useEffect } from 'react';
 import type { AuthResponse, PasswordChangeRequiredResponse } from '@/types/api';
@@ -27,9 +28,13 @@ export default function LoginPage() {
   const isMobile = !screens.sm;
 
   useEffect(() => {
+    useRestaurantStore.getState().clear();
+  }, []);
+
+  useEffect(() => {
     const check = () => {
       if (isAuthenticated()) {
-        router.replace('/users');
+        router.replace('/home');
       } else {
         setHydrated(true);
       }
@@ -56,7 +61,7 @@ export default function LoginPage() {
       } else {
         const auth = data as AuthResponse;
         setTokens(auth.accessToken, auth.refreshToken);
-        router.push('/users');
+        router.push('/home');
       }
       // keep loading=true until page unmounts (redirect in progress)
     } catch {
