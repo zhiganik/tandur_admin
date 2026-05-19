@@ -12,7 +12,7 @@ export interface MenuItemFormValues {
   price: number;
   currency?: string | null;
   categoryId: string;
-  sortOrder: number;
+  sortOrder?: number;
   isAvailable: boolean;
   isActive: boolean;
 }
@@ -50,7 +50,7 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ isAvailable: true, isActive: true, sortOrder: 0, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
+        form.setFieldsValue({ isAvailable: true, isActive: true, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
       }
     }
   }, [open, initialValues, form]);
@@ -105,13 +105,10 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
             rules={[{ required: true, message: t.menu.requirePrice }]}
             style={{ flex: isMobile ? undefined : 1 }}
           >
-            <InputNumber min={0} precision={2} style={{ width: '100%' }} />
+            <InputNumber min={0} precision={2} decimalSeparator="," style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="currency" label={t.menu.currency} style={{ width: isMobile ? '100%' : 100 }}>
             <Input />
-          </Form.Item>
-          <Form.Item name="sortOrder" label={t.menu.sortOrder} style={{ width: isMobile ? '100%' : 100 }}>
-            <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>

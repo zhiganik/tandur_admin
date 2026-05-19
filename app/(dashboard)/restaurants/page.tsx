@@ -41,7 +41,12 @@ export default function RestaurantsPage() {
     setSubmitLoading(true);
     try {
       if (editingItem) {
-        await updateRestaurant.mutateAsync({ id: editingItem.id, data: values });
+        const { isActive, ...restValues } = values;
+        const ops: Promise<unknown>[] = [updateRestaurant.mutateAsync({ id: editingItem.id, data: restValues })];
+        if (isActive !== undefined && isActive !== editingItem.isActive) {
+          ops.push(patchRestaurant.mutateAsync({ id: editingItem.id, isActive }));
+        }
+        await Promise.all(ops);
       } else {
         await createRestaurant.mutateAsync(values);
       }

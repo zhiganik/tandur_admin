@@ -1,13 +1,13 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, Switch, Grid } from 'antd';
+import { Modal, Form, Input, Switch, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Category } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface CategoryFormValues {
   name: string;
-  sortOrder: number;
+  sortOrder?: number;
   isVisible: boolean;
 }
 
@@ -31,12 +31,11 @@ export default function CategoryModal({ open, onClose, onSubmit, initialValues, 
       if (initialValues) {
         form.setFieldsValue({
           name: initialValues.name,
-          sortOrder: initialValues.sortOrder,
           isVisible: initialValues.isVisible,
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ isVisible: true, sortOrder: 0 });
+        form.setFieldsValue({ isVisible: true });
       }
     }
   }, [open, initialValues, form]);
@@ -67,13 +66,6 @@ export default function CategoryModal({ open, onClose, onSubmit, initialValues, 
           rules={[{ required: true, message: t.categories.requireName }]}
         >
           <Input />
-        </Form.Item>
-        <Form.Item
-          name="sortOrder"
-          label={t.categories.sortOrder}
-          rules={[{ required: true, message: t.categories.required }]}
-        >
-          <InputNumber min={0} style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item name="isVisible" label={t.categories.visible} valuePropName="checked">
           <Switch />

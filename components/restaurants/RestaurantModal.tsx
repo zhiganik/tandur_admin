@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, TimePicker, Row, Col, Grid } from 'antd';
+import { Modal, Form, Input, InputNumber, TimePicker, Switch, Row, Col, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Restaurant } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -22,6 +22,7 @@ export interface RestaurantFormValues {
   timeZone: string;
   openTime: string;
   closeTime: string;
+  isActive?: boolean;
 }
 
 export default function RestaurantModal({ open, onClose, onSubmit, initialValues, loading }: Props) {
@@ -37,6 +38,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
         ...initialValues,
         openTime: dayjs(initialValues.openTime, 'HH:mm:ss'),
         closeTime: dayjs(initialValues.closeTime, 'HH:mm:ss'),
+        isActive: initialValues.isActive,
       });
     } else if (open) {
       form.resetFields();
@@ -128,6 +130,11 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
             </Form.Item>
           </Col>
         </Row>
+        {isEdit && (
+          <Form.Item name="isActive" label={t.restaurants.active} valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );

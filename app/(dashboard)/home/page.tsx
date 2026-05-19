@@ -7,7 +7,7 @@ import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvidedDra
 import { useQuery } from '@tanstack/react-query';
 import { menuApi } from '@/lib/api/menu';
 import { useRestaurantStore } from '@/lib/store/restaurantStore';
-import { useAllRestaurants, useUpdateRestaurant } from '@/lib/hooks/useRestaurants';
+import { useAllRestaurants, useUpdateRestaurant, usePatchRestaurant } from '@/lib/hooks/useRestaurants';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, usePatchCategory } from '@/lib/hooks/useCategories';
 import { useCreateMenuItem, useUpdateMenuItem, usePatchMenuItem, useDeleteMenuItem } from '@/lib/hooks/useMenu';
 import { useMe } from '@/lib/hooks/useMe';
@@ -314,6 +314,7 @@ export default function HomePage() {
   const { data: me } = useMe();
   const isSuperAdmin = me?.roles.includes('SuperAdmin') ?? false;
   const updateRestaurant = useUpdateRestaurant();
+  const patchRestaurant = usePatchRestaurant();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editRestaurantOpen, setEditRestaurantOpen] = useState(false);
@@ -323,7 +324,12 @@ export default function HomePage() {
     if (!selectedId) return;
     setEditRestaurantLoading(true);
     try {
-      await updateRestaurant.mutateAsync({ id: selectedId, data: values });
+      const { isActive, ...restValues } = values;
+      const ops: Promise<unknown>[] = [updateRestaurant.mutateAsync({ id: selectedId, data: restValues })];
+      if (isActive !== undefined && selectedRestaurant && isActive !== selectedRestaurant.isActive) {
+        ops.push(patchRestaurant.mutateAsync({ id: selectedId, isActive }));
+      }
+      await Promise.all(ops);
       qc.invalidateQueries({ queryKey: ['restaurants-all'] });
       setEditRestaurantOpen(false);
       setDrawerOpen(false);
@@ -466,7 +472,7 @@ export default function HomePage() {
 
   const handleSaveCategory = async (values: CategoryFormValues) => {
     try {
-      await createCategory.mutateAsync(values);
+      await createCategory.mutateAsync({ ...values, sortOrder: sortedCategories.length });
       invalidate();
       setCatModalOpen(false);
       message.success(t.categories.saveSuccess);
@@ -488,7 +494,11 @@ export default function HomePage() {
   const handleSaveItem = async (values: MenuItemFormValues) => {
     try {
       if (editingItem) await updateItem.mutateAsync({ id: editingItem.id, data: { ...values, isActive: values.isActive ?? editingItem.isActive } });
-      else await createItem.mutateAsync({ ...values, restaurantId: selectedId!, categoryId: itemCategoryId ?? values.categoryId });
+      else {
+        const catId = itemCategoryId ?? values.categoryId;
+        const nextOrder = (sortedItems[catId] ?? []).length;
+        await createItem.mutateAsync({ ...values, restaurantId: selectedId!, categoryId: catId, sortOrder: nextOrder });
+      }
       invalidate();
       setItemModalOpen(false);
       setEditingItem(null);

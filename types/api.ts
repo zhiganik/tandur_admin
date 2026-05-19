@@ -149,13 +149,13 @@ export interface Category {
 
 export interface CreateCategoryRequest {
   name: string;
-  sortOrder: number;
+  sortOrder?: number;
   isVisible: boolean;
 }
 
 export interface UpdateCategoryRequest {
   name: string;
-  sortOrder: number;
+  sortOrder?: number;
   isVisible: boolean;
 }
 
@@ -190,7 +190,7 @@ export interface CreateMenuItemRequest {
   currency?: string | null;
   isAvailable: boolean;
   isActive?: boolean;
-  sortOrder: number;
+  sortOrder?: number;
 }
 
 export interface UpdateMenuItemRequest {
@@ -200,7 +200,7 @@ export interface UpdateMenuItemRequest {
   price: number;
   currency?: string | null;
   categoryId: string;
-  sortOrder: number;
+  sortOrder?: number;
   isAvailable: boolean;
   isActive: boolean;
 }
