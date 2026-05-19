@@ -83,13 +83,6 @@ export default function RestaurantsPage() {
     { title: t.restaurants.name, dataIndex: 'name', key: 'name' },
     { title: t.restaurants.address, dataIndex: 'address', key: 'address', responsive: ['md'] as Breakpoint[] },
     {
-      title: t.restaurants.hours,
-      key: 'hours',
-      render: (_: unknown, r: Restaurant) =>
-        `${r.openTime?.slice(0, 5)} — ${r.closeTime?.slice(0, 5)}`,
-      responsive: ['lg'] as Breakpoint[],
-    },
-    {
       title: t.restaurants.active,
       key: 'isActive',
       width: 100,

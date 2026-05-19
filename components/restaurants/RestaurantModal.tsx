@@ -1,10 +1,9 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, TimePicker, Switch, Select, Row, Col, Grid } from 'antd';
+import { Modal, Form, Input, InputNumber, Switch, Select, Row, Col, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Restaurant } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
-import dayjs from 'dayjs';
 
 interface Props {
   open: boolean;
@@ -24,8 +23,6 @@ export interface RestaurantFormValues {
   latitude: number;
   longitude: number;
   timeZone: string;
-  openTime: string;
-  closeTime: string;
   currency: string;
   isActive?: boolean;
 }
@@ -40,9 +37,11 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
   useEffect(() => {
     if (open && initialValues) {
       form.setFieldsValue({
-        ...initialValues,
-        openTime: dayjs(initialValues.openTime, 'HH:mm:ss'),
-        closeTime: dayjs(initialValues.closeTime, 'HH:mm:ss'),
+        name: initialValues.name,
+        address: initialValues.address,
+        latitude: initialValues.latitude,
+        longitude: initialValues.longitude,
+        timeZone: initialValues.timeZone,
         currency: initialValues.currency,
         isActive: initialValues.isActive,
       });
@@ -53,11 +52,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
 
   const handleOk = async () => {
     const values = await form.validateFields();
-    await onSubmit({
-      ...values,
-      openTime: values.openTime.format('HH:mm:ss'),
-      closeTime: values.closeTime.format('HH:mm:ss'),
-    });
+    await onSubmit(values);
   };
 
   return (
@@ -116,26 +111,6 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
         >
           <Input placeholder="America/New_York" />
         </Form.Item>
-        <Row gutter={12}>
-          <Col span={isMobile ? 24 : 12}>
-            <Form.Item
-              name="openTime"
-              label={t.restaurants.openTime}
-              rules={[{ required: true, message: t.restaurants.requireOpenTime }]}
-            >
-              <TimePicker style={{ width: '100%' }} format="HH:mm" />
-            </Form.Item>
-          </Col>
-          <Col span={isMobile ? 24 : 12}>
-            <Form.Item
-              name="closeTime"
-              label={t.restaurants.closeTime}
-              rules={[{ required: true, message: t.restaurants.requireCloseTime }]}
-            >
-              <TimePicker style={{ width: '100%' }} format="HH:mm" />
-            </Form.Item>
-          </Col>
-        </Row>
         <Form.Item
           name="currency"
           label={t.restaurants.currency}

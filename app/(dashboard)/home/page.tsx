@@ -726,9 +726,6 @@ export default function HomePage() {
           {selectedRestaurant && (
             <Descriptions column={1} size="small">
               <Descriptions.Item label={t.restaurants.address}>{selectedRestaurant.address}</Descriptions.Item>
-              <Descriptions.Item label={t.restaurants.hours}>
-                {selectedRestaurant.openTime?.slice(0, 5)} — {selectedRestaurant.closeTime?.slice(0, 5)}
-              </Descriptions.Item>
               <Descriptions.Item label={t.restaurants.latitude}>{selectedRestaurant.latitude}</Descriptions.Item>
               <Descriptions.Item label={t.restaurants.longitude}>{selectedRestaurant.longitude}</Descriptions.Item>
               <Descriptions.Item label={t.restaurants.currency}>{selectedRestaurant.currency}</Descriptions.Item>

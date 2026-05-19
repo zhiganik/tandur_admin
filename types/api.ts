@@ -108,8 +108,6 @@ export interface Restaurant {
   latitude: number;
   longitude: number;
   timeZone: string | null;
-  openTime: string;
-  closeTime: string;
   isActive: boolean;
   isOpenNow: boolean;
   distanceKm: number | null;
@@ -122,8 +120,6 @@ export interface CreateRestaurantRequest {
   latitude: number;
   longitude: number;
   timeZone?: string | null;
-  openTime: string;
-  closeTime: string;
   currency: string;
 }
 
@@ -132,9 +128,53 @@ export interface UpdateRestaurantRequest {
   address?: string | null;
   latitude?: number;
   longitude?: number;
-  openTime?: string;
-  closeTime?: string;
   currency?: string;
+}
+
+// Schedule
+export interface TimeSlot {
+  from: string;
+  to: string;
+}
+
+export interface ScheduleDay {
+  dayOfWeek: number; // 0=Sunday … 6=Saturday
+  isDayOff: boolean;
+  timeSlots: TimeSlot[];
+}
+
+export interface UpdateScheduleDayRequest {
+  isDayOff: boolean;
+  timeSlots: TimeSlot[];
+}
+
+export interface UpdateFullScheduleRequest {
+  days: ScheduleDay[];
+}
+
+// Overrides
+export interface ScheduleOverride {
+  id: string;
+  date: string;
+  reason: string;
+  isInstant: boolean;
+  timeSlots: TimeSlot[];
+}
+
+export interface CreateOverrideRequest {
+  date: string;
+  reason: string;
+  timeSlots: TimeSlot[];
+}
+
+export interface UpdateOverrideRequest {
+  reason: string;
+  timeSlots: TimeSlot[];
+}
+
+export interface InstantCloseRequest {
+  reason: string;
+  timeSlots: TimeSlot[];
 }
 
 export interface PatchRestaurantRequest {
