@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Table, Button, Popconfirm, Typography, App, Spin, Input, Space, Tag, Drawer, Popover } from 'antd';
+import { useState, useCallback, useDeferredValue } from 'react';
+import { Table, Button, Popconfirm, Typography, App, Input, Space, Tag, Drawer, Popover, Tooltip } from 'antd';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
-import type { SorterResult } from 'antd/es/table/interface';
-import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined } from '@ant-design/icons';
+import type { SorterResult, FilterValue, TablePaginationConfig, TableCurrentDataSource } from 'antd/es/table/interface';
+import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser, useAssignRestaurant, useUnassignRestaurant, useResetAdminPassword } from '@/lib/hooks/useUsers';
 import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
 import { useMe } from '@/lib/hooks/useMe';
@@ -108,10 +108,14 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
 
 export default function UsersPage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
-  // null = no explicit sort (server default = desc), otherwise controlled
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+  // 'asc' | 'desc' — always controlled, no null to avoid uncontrolled cycling
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Debounce search via deferred value so keystrokes don't trigger immediate refetch
+  const search = useDeferredValue(searchInput);
+
   const [drawerUser, setDrawerUser] = useState<User | null>(null);
 
   const { data, isLoading } = useUsers({
@@ -119,7 +123,7 @@ export default function UsersPage() {
     limit: 20,
     search: search || undefined,
     role: roleFilter.length ? roleFilter : undefined,
-    sort: sortOrder ?? undefined,
+    sort: sortOrder,
   });
 
   const deleteUser = useDeleteUser();
@@ -147,7 +151,36 @@ export default function UsersPage() {
     }
   };
 
-  const antSortOrder = sortOrder === 'asc' ? ('ascend' as const) : sortOrder === 'desc' ? ('descend' as const) : undefined;
+  const handleCopyId = useCallback((id: string) => {
+    navigator.clipboard.writeText(id);
+  }, []);
+
+  const antSortOrder = sortOrder === 'asc' ? ('ascend' as const) : ('descend' as const);
+
+  const handleTableChange = useCallback(
+    (_pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<User> | SorterResult<User>[], _extra: TableCurrentDataSource<User>) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+      // Role filter — only update if the role key is present in filters
+      if ('role' in filters) {
+        const newRoles = (filters['role'] as string[]) ?? [];
+        setRoleFilter(newRoles);
+        setPage(1);
+      }
+
+      // Sort
+      const s = Array.isArray(sorter) ? sorter[0] : sorter;
+      if (s?.field === 'createdAt') {
+        // Toggle: if already same direction, flip it; if undefined (shouldn't happen with controlled), keep desc
+        setSortOrder((prev) => {
+          if (s.order === 'ascend') return 'asc';
+          if (s.order === 'descend') return 'desc';
+          // order undefined = user clicked to "clear" — flip instead
+          return prev === 'asc' ? 'desc' : 'asc';
+        });
+        setPage(1);
+      }
+    },
+    [],
+  );
 
   const columns = [
     {
@@ -155,9 +188,20 @@ export default function UsersPage() {
       dataIndex: 'id',
       key: 'id',
       render: (v: string) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
-          {v.slice(0, 8)}…
-        </span>
+        <Space size={4}>
+          <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>
+            {v.slice(0, 8)}…
+          </span>
+          <Tooltip title="Copy ID">
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)' }} />}
+              style={{ padding: '0 2px', height: 18, minWidth: 18 }}
+              onClick={() => handleCopyId(v)}
+            />
+          </Tooltip>
+        </Space>
       ),
       responsive: ['xl'] as Breakpoint[],
     },
@@ -180,13 +224,6 @@ export default function UsersPage() {
       key: 'phone',
       render: (v: string | null) => v || '—',
       responsive: ['sm'] as Breakpoint[],
-    },
-    {
-      title: t.users.dateOfBirth,
-      dataIndex: 'dateOfBirth',
-      key: 'dateOfBirth',
-      render: (v: string | null) => v ? new Date(v).toLocaleDateString('en-GB') : '—',
-      responsive: ['lg'] as Breakpoint[],
     },
     {
       title: t.users.role,
@@ -262,22 +299,14 @@ export default function UsersPage() {
     },
   ];
 
-  if (isLoading && !data) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t.users.title}</Title>
       <Input
         prefix={<SearchOutlined />}
         placeholder={t.users.searchPlaceholder}
-        value={search}
-        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        value={searchInput}
+        onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
         allowClear
         style={{ width: 300, marginBottom: 16 }}
       />
@@ -287,21 +316,7 @@ export default function UsersPage() {
         columns={columns}
         scroll={{ x: true }}
         loading={isLoading}
-        onChange={(_pagination, filters, sorter) => {
-          const roleFilters = filters['role'];
-          if (roleFilters !== undefined) {
-            setRoleFilter((roleFilters as string[]) ?? []);
-            setPage(1);
-          }
-
-          const s = sorter as SorterResult<User>;
-          if (s.field === 'createdAt') {
-            if (s.order === 'ascend') setSortOrder('asc');
-            else if (s.order === 'descend') setSortOrder('desc');
-            else setSortOrder(null);
-            setPage(1);
-          }
-        }}
+        onChange={handleTableChange}
         pagination={{
           current: page,
           pageSize: 20,
