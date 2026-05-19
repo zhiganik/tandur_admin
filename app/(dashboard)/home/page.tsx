@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Collapse, Button, Typography, App, Spin, Switch, Space, Popconfirm, Badge, Drawer, Descriptions, Input, type InputRef } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined, PictureOutlined, CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined, PictureOutlined, CheckOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useQuery } from '@tanstack/react-query';
 import { menuApi } from '@/lib/api/menu';
@@ -51,17 +51,18 @@ interface ItemsTableProps {
   items: MenuItem[];
   t: ReturnType<typeof useI18n>['t'];
   patchItem: ReturnType<typeof usePatchMenuItem>;
+  isDragDisabled?: boolean;
   onToggle: (id: string, v: boolean) => void;
   onToggleActive: (id: string, v: boolean) => void;
   onEdit: (item: MenuItem) => void;
   onDelete: (id: string) => void;
 }
 
-function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
+function ItemsTable({ catId, items, t, patchItem, isDragDisabled, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
   const COL_WIDTHS = [32, undefined, 120, 80, 70, 88] as const;
 
   return (
-    <Droppable droppableId={catId} type="ITEM">
+    <Droppable droppableId={catId} type="ITEM" isDropDisabled={isDragDisabled}>
       {(dropProvided) => (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
@@ -88,7 +89,7 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEd
                 <tr><td colSpan={6} style={{ padding: '8px', color: 'rgba(0,0,0,0.35)', fontSize: 12 }}>No items</td></tr>
               )}
               {items.map((item, idx) => (
-                <Draggable key={item.id} draggableId={item.id} index={idx}>
+                <Draggable key={item.id} draggableId={item.id} index={idx} isDragDisabled={isDragDisabled}>
                   {(dragProvided, dragSnapshot) => (
                     <tr
                       ref={dragProvided.innerRef}
@@ -168,6 +169,7 @@ interface CategoryPanelProps {
   items: MenuItem[];
   isOpen: boolean;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
+  isDragDisabled?: boolean;
   t: ReturnType<typeof useI18n>['t'];
   patchItem: ReturnType<typeof usePatchMenuItem>;
   patchCategory: ReturnType<typeof usePatchCategory>;
@@ -183,7 +185,7 @@ interface CategoryPanelProps {
 }
 
 function CategoryPanel({
-  cat, items, isOpen, dragHandleProps, t, patchItem, patchCategory, updateCategory,
+  cat, items, isOpen, dragHandleProps, isDragDisabled, t, patchItem, patchCategory, updateCategory,
   onToggleOpen, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable, onToggleActive, onInvalidate,
 }: CategoryPanelProps) {
   const { message } = App.useApp();
@@ -300,6 +302,7 @@ function CategoryPanel({
               items={items}
               t={t}
               patchItem={patchItem}
+              isDragDisabled={isDragDisabled}
               onToggle={onToggleAvailable}
               onToggleActive={onToggleActive}
               onEdit={onEditItem}
@@ -390,8 +393,32 @@ export default function HomePage() {
     setSortedItems(map);
   }, [serverItems]);
 
+  const [search, setSearch] = useState('');
+
+  const { visibleCategories, visibleItems } = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return { visibleCategories: sortedCategories, visibleItems: sortedItems };
+
+    const filteredItems: Record<string, MenuItem[]> = {};
+    const cats: Category[] = [];
+
+    for (const cat of sortedCategories) {
+      const catMatch = cat.name.toLowerCase().includes(q);
+      const matchingItems = (sortedItems[cat.id] ?? []).filter((item) =>
+        item.name.toLowerCase().includes(q)
+      );
+      if (catMatch || matchingItems.length > 0) {
+        cats.push(cat);
+        filteredItems[cat.id] = catMatch ? (sortedItems[cat.id] ?? []) : matchingItems;
+      }
+    }
+    return { visibleCategories: cats, visibleItems: filteredItems };
+  }, [search, sortedCategories, sortedItems]);
+
+  const isSearching = search.trim().length > 0;
+
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
-  const allExpanded = sortedCategories.length > 0 && activeKeys.length === sortedCategories.length;
+  const allExpanded = visibleCategories.length > 0 && activeKeys.length === visibleCategories.length;
 
   // Open all panels whenever the restaurant changes and its categories load
   const lastExpandedRestaurantId = useRef<string | null>(null);
@@ -401,6 +428,13 @@ export default function HomePage() {
       setActiveKeys(sortedCategories.map((c) => c.id));
     }
   }); // intentionally no dep array — runs after every render, guarded by ref
+
+  // While searching — keep all matching panels open
+  useEffect(() => {
+    if (isSearching) {
+      setActiveKeys(visibleCategories.map((c) => c.id));
+    }
+  }, [isSearching, visibleCategories]);
 
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -593,13 +627,25 @@ export default function HomePage() {
               />
             )}
           </Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCatModalOpen(true)}>
-            {t.categories.addButton}
-          </Button>
+          <Space>
+            <Input
+              prefix={<SearchOutlined style={{ color: 'rgba(0,0,0,0.25)' }} />}
+              placeholder="Search categories and items..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              allowClear
+              style={{ width: 240 }}
+            />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCatModalOpen(true)}>
+              {t.categories.addButton}
+            </Button>
+          </Space>
         </div>
 
         {sortedCategories.length === 0 ? (
           <Text type="secondary">No categories yet. Add one to get started.</Text>
+        ) : visibleCategories.length === 0 ? (
+          <Text type="secondary">No results for &ldquo;{search}&rdquo;</Text>
         ) : (
           <>
             <div style={{ marginBottom: 8 }}>
@@ -607,16 +653,16 @@ export default function HomePage() {
                 type="text"
                 size="small"
                 icon={allExpanded ? <MinusSquareOutlined /> : <UnorderedListOutlined />}
-                onClick={() => setActiveKeys(allExpanded ? [] : sortedCategories.map((c) => c.id))}
+                onClick={() => setActiveKeys(allExpanded ? [] : visibleCategories.map((c) => c.id))}
               >
                 {allExpanded ? 'Collapse all' : 'Expand all'}
               </Button>
             </div>
-            <Droppable droppableId="categories" type="CATEGORY">
+            <Droppable droppableId="categories" type="CATEGORY" isDropDisabled={isSearching}>
               {(dropProvided) => (
                 <div ref={dropProvided.innerRef} {...dropProvided.droppableProps} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {sortedCategories.map((cat, idx) => (
-                    <Draggable key={cat.id} draggableId={`cat-${cat.id}`} index={idx}>
+                  {visibleCategories.map((cat, idx) => (
+                    <Draggable key={cat.id} draggableId={`cat-${cat.id}`} index={idx} isDragDisabled={isSearching}>
                       {(dragProvided, dragSnapshot) => (
                         <div
                           ref={dragProvided.innerRef}
@@ -629,9 +675,10 @@ export default function HomePage() {
                         >
                           <CategoryPanel
                             cat={cat}
-                            items={sortedItems[cat.id] ?? []}
+                            items={visibleItems[cat.id] ?? []}
                             isOpen={activeKeys.includes(cat.id)}
                             dragHandleProps={dragProvided.dragHandleProps}
+                            isDragDisabled={isSearching}
                             t={t}
                             patchItem={patchItem}
                             patchCategory={patchCategory}
