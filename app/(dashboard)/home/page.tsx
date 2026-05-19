@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { Collapse, Button, Typography, App, Spin, Switch, Space, Popconfirm, Badge, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined, PictureOutlined } from '@ant-design/icons';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Collapse, Button, Typography, App, Spin, Switch, Space, Popconfirm, Badge, Drawer, Descriptions, Input, type InputRef } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined, PictureOutlined, CheckOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useQuery } from '@tanstack/react-query';
 import { menuApi } from '@/lib/api/menu';
 import { useRestaurantStore } from '@/lib/store/restaurantStore';
+import { useAllRestaurants, useUpdateRestaurant } from '@/lib/hooks/useRestaurants';
 import { useCreateCategory, useUpdateCategory, useDeleteCategory, usePatchCategory } from '@/lib/hooks/useCategories';
 import { useCreateMenuItem, useUpdateMenuItem, usePatchMenuItem, useDeleteMenuItem } from '@/lib/hooks/useMenu';
+import { useMe } from '@/lib/hooks/useMe';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { useQueryClient } from '@tanstack/react-query';
 import CategoryModal, { CategoryFormValues } from '@/components/categories/CategoryModal';
 import MenuItemModal, { MenuItemFormValues } from '@/components/menu/MenuItemModal';
+import RestaurantModal, { RestaurantFormValues } from '@/components/restaurants/RestaurantModal';
 import { Category, MenuItem } from '@/types/api';
 
 const { Title, Text } = Typography;
@@ -146,29 +149,101 @@ interface CategoryPanelProps {
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
   t: ReturnType<typeof useI18n>['t'];
   patchItem: ReturnType<typeof usePatchMenuItem>;
+  patchCategory: ReturnType<typeof usePatchCategory>;
+  updateCategory: ReturnType<typeof useUpdateCategory>;
   onToggleOpen: (id: string) => void;
-  onEditCat: (cat: Category) => void;
   onDeleteCat: (id: string) => void;
   onAddItem: (catId: string) => void;
   onEditItem: (item: MenuItem) => void;
   onDeleteItem: (id: string) => void;
   onToggleAvailable: (id: string, v: boolean) => void;
+  onInvalidate: () => void;
 }
 
 function CategoryPanel({
-  cat, items, isOpen, dragHandleProps, t, patchItem,
-  onToggleOpen, onEditCat, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable,
+  cat, items, isOpen, dragHandleProps, t, patchItem, patchCategory, updateCategory,
+  onToggleOpen, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable, onInvalidate,
 }: CategoryPanelProps) {
+  const { message } = App.useApp();
+  const [editing, setEditing] = useState(false);
+  const [nameValue, setNameValue] = useState(cat.name);
+  const inputRef = useRef<InputRef>(null);
+
+  useEffect(() => { setNameValue(cat.name); }, [cat.name]);
+
+  const startEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const commitEdit = async () => {
+    const trimmed = nameValue.trim();
+    if (!trimmed || trimmed === cat.name) { setEditing(false); setNameValue(cat.name); return; }
+    try {
+      await updateCategory.mutateAsync({ id: cat.id, data: { name: trimmed, sortOrder: cat.sortOrder, isVisible: cat.isVisible } });
+      onInvalidate();
+    } catch {
+      message.error(t.categories.saveFailed);
+      setNameValue(cat.name);
+    }
+    setEditing(false);
+  };
+
+  const cancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditing(false);
+    setNameValue(cat.name);
+  };
+
+  const handleToggleVisible = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await patchCategory.mutateAsync({ id: cat.id, data: { isVisible: !cat.isVisible } });
+      onInvalidate();
+    } catch {
+      message.error(t.categories.statusFailed);
+    }
+  };
+
   const label = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       <span {...dragHandleProps} style={{ cursor: 'grab', color: 'rgba(0,0,0,0.25)', lineHeight: 1 }} onClick={(e) => e.stopPropagation()}>
         <HolderOutlined />
       </span>
-      <span style={{ fontWeight: 500 }}>{cat.name}</span>
+
+      {editing ? (
+        <Space size={4} onClick={(e) => e.stopPropagation()}>
+          <Input
+            ref={inputRef}
+            size="small"
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
+            onPressEnter={commitEdit}
+            onBlur={commitEdit}
+            style={{ width: 160 }}
+          />
+          <Button size="small" type="text" icon={<CheckOutlined style={{ color: '#52c41a' }} />} onMouseDown={(e) => { e.preventDefault(); commitEdit(); }} />
+          <Button size="small" type="text" icon={<CloseOutlined />} onMouseDown={cancelEdit} />
+        </Space>
+      ) : (
+        <Space size={4} onClick={(e) => e.stopPropagation()}>
+          <span style={{ fontWeight: 500 }}>{cat.name}</span>
+          <Button size="small" type="text" icon={<EditOutlined style={{ color: 'rgba(0,0,0,0.35)' }} />} onClick={startEdit} />
+        </Space>
+      )}
+
       <Badge count={items.length} color="blue" showZero />
-      {!cat.isVisible && <Tag color="default">Hidden</Tag>}
+
       <Space size={4} onClick={(e) => e.stopPropagation()}>
-        <Button size="small" icon={<EditOutlined />} type="text" onClick={() => onEditCat(cat)} />
+        <span onClick={handleToggleVisible}>
+          <Switch
+            size="small"
+            checked={cat.isVisible}
+            loading={patchCategory.isPending}
+            onChange={() => {}}
+          />
+        </span>
         <Popconfirm
           title={t.categories.deleteConfirm}
           onConfirm={() => onDeleteCat(cat.id)}
@@ -222,6 +297,32 @@ export default function HomePage() {
   const qc = useQueryClient();
   const selectedId = useRestaurantStore((s) => s.selectedId);
 
+  const { data: restaurantsData } = useAllRestaurants();
+  const selectedRestaurant = restaurantsData?.data?.find((r) => r.id === selectedId) ?? null;
+  const { data: me } = useMe();
+  const isSuperAdmin = me?.roles.includes('SuperAdmin') ?? false;
+  const updateRestaurant = useUpdateRestaurant();
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editRestaurantOpen, setEditRestaurantOpen] = useState(false);
+  const [editRestaurantLoading, setEditRestaurantLoading] = useState(false);
+
+  const handleUpdateRestaurant = async (values: RestaurantFormValues) => {
+    if (!selectedId) return;
+    setEditRestaurantLoading(true);
+    try {
+      await updateRestaurant.mutateAsync({ id: selectedId, data: values });
+      qc.invalidateQueries({ queryKey: ['restaurants-all'] });
+      setEditRestaurantOpen(false);
+      setDrawerOpen(false);
+      message.success(t.restaurants.saveSuccess);
+    } catch {
+      message.error(t.restaurants.saveFailed);
+    } finally {
+      setEditRestaurantLoading(false);
+    }
+  };
+
   const { data: menuData, isLoading } = useQuery({
     queryKey: ['full-menu', selectedId],
     queryFn: () => menuApi.getFullMenu(selectedId!),
@@ -270,7 +371,6 @@ export default function HomePage() {
   }, [sortedCategories.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [catModalOpen, setCatModalOpen] = useState(false);
-  const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [itemCategoryId, setItemCategoryId] = useState<string | null>(null);
@@ -349,11 +449,9 @@ export default function HomePage() {
 
   const handleSaveCategory = async (values: CategoryFormValues) => {
     try {
-      if (editingCat) await updateCategory.mutateAsync({ id: editingCat.id, data: values });
-      else await createCategory.mutateAsync(values);
+      await createCategory.mutateAsync(values);
       invalidate();
       setCatModalOpen(false);
-      setEditingCat(null);
       message.success(t.categories.saveSuccess);
     } catch {
       message.error(t.categories.saveFailed);
@@ -421,9 +519,26 @@ export default function HomePage() {
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div>
+        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-          <Title level={4} style={{ margin: 0 }}>{t.nav.home}</Title>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCat(null); setCatModalOpen(true); }}>
+          <Space size={8}>
+            <Title level={4} style={{ margin: 0 }}>{selectedRestaurant?.name ?? t.nav.home}</Title>
+            <Button
+              type="text"
+              size="small"
+              icon={<InfoCircleOutlined style={{ color: 'rgba(0,0,0,0.45)' }} />}
+              onClick={() => setDrawerOpen(true)}
+            />
+            {isSuperAdmin && (
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined style={{ color: 'rgba(0,0,0,0.45)' }} />}
+                onClick={() => setEditRestaurantOpen(true)}
+              />
+            )}
+          </Space>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCatModalOpen(true)}>
             {t.categories.addButton}
           </Button>
         </div>
@@ -464,17 +579,19 @@ export default function HomePage() {
                             dragHandleProps={dragProvided.dragHandleProps}
                             t={t}
                             patchItem={patchItem}
+                            patchCategory={patchCategory}
+                            updateCategory={updateCategory}
                             onToggleOpen={(id) =>
                               setActiveKeys((prev) =>
                                 prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
                               )
                             }
-                            onEditCat={(c) => { setEditingCat(c); setCatModalOpen(true); }}
                             onDeleteCat={handleDeleteCategory}
                             onAddItem={(catId) => { setItemCategoryId(catId); setEditingItem(null); setItemModalOpen(true); }}
                             onEditItem={(item) => { setEditingItem(item); setItemCategoryId(item.categoryId); setItemModalOpen(true); }}
                             onDeleteItem={handleDeleteItem}
                             onToggleAvailable={handleToggleAvailable}
+                            onInvalidate={invalidate}
                           />
                         </div>
                       )}
@@ -487,12 +604,49 @@ export default function HomePage() {
           </>
         )}
 
+        {/* Restaurant info drawer */}
+        <Drawer
+          title={selectedRestaurant?.name}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          width={360}
+          extra={isSuperAdmin && (
+            <Button icon={<EditOutlined />} onClick={() => { setDrawerOpen(false); setEditRestaurantOpen(true); }}>
+              {t.common.edit}
+            </Button>
+          )}
+        >
+          {selectedRestaurant && (
+            <Descriptions column={1} size="small">
+              <Descriptions.Item label={t.restaurants.address}>{selectedRestaurant.address}</Descriptions.Item>
+              <Descriptions.Item label={t.restaurants.hours}>
+                {selectedRestaurant.openTime?.slice(0, 5)} — {selectedRestaurant.closeTime?.slice(0, 5)}
+              </Descriptions.Item>
+              <Descriptions.Item label={t.restaurants.latitude}>{selectedRestaurant.latitude}</Descriptions.Item>
+              <Descriptions.Item label={t.restaurants.longitude}>{selectedRestaurant.longitude}</Descriptions.Item>
+              <Descriptions.Item label={t.restaurants.active}>
+                <Switch size="small" checked={selectedRestaurant.isActive} disabled />
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+        </Drawer>
+
+        {/* Edit restaurant modal (SuperAdmin only) */}
+        {isSuperAdmin && selectedRestaurant && (
+          <RestaurantModal
+            open={editRestaurantOpen}
+            onClose={() => setEditRestaurantOpen(false)}
+            onSubmit={handleUpdateRestaurant}
+            initialValues={selectedRestaurant}
+            loading={editRestaurantLoading}
+          />
+        )}
+
         <CategoryModal
           open={catModalOpen}
-          onClose={() => { setCatModalOpen(false); setEditingCat(null); }}
+          onClose={() => setCatModalOpen(false)}
           onSubmit={handleSaveCategory}
-          initialValues={editingCat}
-          loading={createCategory.isPending || updateCategory.isPending}
+          loading={createCategory.isPending}
         />
 
         <MenuItemModal
@@ -500,6 +654,7 @@ export default function HomePage() {
           onClose={() => { setItemModalOpen(false); setEditingItem(null); setItemCategoryId(null); }}
           onSubmit={handleSaveItem}
           initialValues={editingItem}
+          defaultCategoryId={editingItem ? null : itemCategoryId}
           categories={sortedCategories}
           loading={createItem.isPending || updateItem.isPending}
         />

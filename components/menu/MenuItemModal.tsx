@@ -21,11 +21,12 @@ interface Props {
   onClose: () => void;
   onSubmit: (values: MenuItemFormValues) => void;
   initialValues?: MenuItem | null;
+  defaultCategoryId?: string | null;
   categories: Category[];
   loading?: boolean;
 }
 
-export default function MenuItemModal({ open, onClose, onSubmit, initialValues, categories, loading }: Props) {
+export default function MenuItemModal({ open, onClose, onSubmit, initialValues, defaultCategoryId, categories, loading }: Props) {
   const [form] = Form.useForm<MenuItemFormValues>();
   const { t } = useI18n();
   const isEdit = !!initialValues;
@@ -47,7 +48,7 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ isAvailable: true, sortOrder: 0, currency: 'UAH' });
+        form.setFieldsValue({ isAvailable: true, sortOrder: 0, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
       }
     }
   }, [open, initialValues, form]);
