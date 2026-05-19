@@ -5,18 +5,18 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Layout, Menu, Typography, Grid, Button } from 'antd';
 import {
   UserOutlined,
-  ShopOutlined,
   LogoutOutlined,
-  UnorderedListOutlined,
-  AppstoreOutlined,
+  HomeOutlined,
   MenuOutlined,
   IdcardOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useRestaurantStore } from '@/lib/store/restaurantStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { authApi } from '@/lib/api/auth';
 import { useMe } from '@/lib/hooks/useMe';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import RestaurantSelector from '@/components/layout/RestaurantSelector';
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
@@ -30,6 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (refreshToken) {
       try { await authApi.logout({ refreshToken }); } catch { /* ignore */ }
     }
+    useRestaurantStore.getState().clear();
     logout();
   };
 
@@ -57,11 +58,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     if (useAuthStore.persist.hasHydrated()) {
+      useRestaurantStore.persist.rehydrate();
       check();
       return;
     }
 
-    const unsub = useAuthStore.persist.onFinishHydration(check);
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      useRestaurantStore.persist.rehydrate();
+      check();
+    });
     return unsub;
   }, [router]);
 
@@ -73,17 +78,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!mounted) return null;
 
-  const selectedKey = pathname.startsWith('/restaurants/') && pathname.includes('/categories')
-    ? '/categories'
-    : pathname.startsWith('/restaurants/') && pathname.includes('/menu')
-    ? '/menu'
-    : pathname;
+  const selectedKey = pathname === '/' ? '/home' : pathname;
 
   const menuItems = [
+    { key: '/home', icon: <HomeOutlined />, label: t.nav.home },
     { key: '/users', icon: <UserOutlined />, label: t.nav.users },
-    { key: '/restaurants', icon: <ShopOutlined />, label: t.nav.restaurants },
-    { key: '/categories', icon: <AppstoreOutlined />, label: t.nav.categories },
-    { key: '/menu', icon: <UnorderedListOutlined />, label: t.nav.menu },
     { key: '/profile', icon: <IdcardOutlined />, label: t.nav.profile },
   ];
 
@@ -190,7 +189,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Text>
             ) : <span />}
           </div>
-          <LanguageSwitcher />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <RestaurantSelector />
+            <LanguageSwitcher />
+          </div>
         </Header>
         <Content style={{ margin: isMobile ? 12 : 24 }}>
           {children}

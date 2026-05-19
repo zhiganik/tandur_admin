@@ -58,6 +58,7 @@ const en = {
     verifyEmailDesc: 'A verification code has been sent to your email address',
   },
   nav: {
+    home: 'Home',
     users: 'Users',
     restaurants: 'Restaurants',
     categories: 'Categories',

@@ -8,6 +8,12 @@ export const useRestaurants = (page = 1, limit = 20) =>
     queryFn: () => restaurantsApi.getAll(page, limit),
   });
 
+export const useAllRestaurants = () =>
+  useQuery({
+    queryKey: ['restaurants-all'],
+    queryFn: () => restaurantsApi.getAll(1, 20),
+  });
+
 export const useCreateRestaurant = () => {
   const queryClient = useQueryClient();
   return useMutation({
