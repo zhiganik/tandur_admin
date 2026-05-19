@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Input, InputNumber, TimePicker, Switch, Row, Col, Grid } from 'antd';
+import { Modal, Form, Input, InputNumber, TimePicker, Switch, Select, Row, Col, Grid } from 'antd';
 import { useEffect } from 'react';
 import { Restaurant } from '@/types/api';
 import { useI18n } from '@/lib/i18n/I18nContext';
@@ -14,6 +14,10 @@ interface Props {
   loading?: boolean;
 }
 
+const CURRENCIES = [
+  'UAH', 'USD', 'EUR', 'GBP', 'KZT', 'RUB', 'PLN', 'CZK', 'TRY', 'GEL', 'AZN', 'AMD',
+];
+
 export interface RestaurantFormValues {
   name: string;
   address: string;
@@ -22,6 +26,7 @@ export interface RestaurantFormValues {
   timeZone: string;
   openTime: string;
   closeTime: string;
+  currency: string;
   isActive?: boolean;
 }
 
@@ -38,6 +43,7 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
         ...initialValues,
         openTime: dayjs(initialValues.openTime, 'HH:mm:ss'),
         closeTime: dayjs(initialValues.closeTime, 'HH:mm:ss'),
+        currency: initialValues.currency,
         isActive: initialValues.isActive,
       });
     } else if (open) {
@@ -130,6 +136,17 @@ export default function RestaurantModal({ open, onClose, onSubmit, initialValues
             </Form.Item>
           </Col>
         </Row>
+        <Form.Item
+          name="currency"
+          label={t.restaurants.currency}
+          rules={[{ required: true, message: t.restaurants.required }]}
+        >
+          <Select
+            showSearch
+            options={CURRENCIES.map((c) => ({ value: c, label: c }))}
+            placeholder="UAH"
+          />
+        </Form.Item>
         {isEdit && (
           <Form.Item name="isActive" label={t.restaurants.active} valuePropName="checked">
             <Switch />

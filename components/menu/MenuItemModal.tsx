@@ -10,7 +10,6 @@ export interface MenuItemFormValues {
   description?: string | null;
   shortDescription?: string | null;
   price: number;
-  currency?: string | null;
   categoryId: string;
   sortOrder?: number;
   isAvailable: boolean;
@@ -42,7 +41,6 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
           description: initialValues.description,
           shortDescription: initialValues.shortDescription,
           price: initialValues.price,
-          currency: initialValues.currency,
           categoryId: initialValues.categoryId,
           sortOrder: initialValues.sortOrder,
           isAvailable: initialValues.isAvailable,
@@ -50,7 +48,7 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ isAvailable: true, isActive: true, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
+        form.setFieldsValue({ isAvailable: true, isActive: true, ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
       }
     }
   }, [open, initialValues, form]);
@@ -98,19 +96,13 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
             placeholder={t.menu.requireCategory}
           />
         </Form.Item>
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
-          <Form.Item
-            name="price"
-            label={t.menu.price}
-            rules={[{ required: true, message: t.menu.requirePrice }]}
-            style={{ flex: isMobile ? undefined : 1 }}
-          >
-            <InputNumber min={0} precision={2} decimalSeparator="," style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="currency" label={t.menu.currency} style={{ width: isMobile ? '100%' : 100 }}>
-            <Input />
-          </Form.Item>
-        </div>
+        <Form.Item
+          name="price"
+          label={t.menu.price}
+          rules={[{ required: true, message: t.menu.requirePrice }]}
+        >
+          <InputNumber min={0} precision={2} decimalSeparator="," style={{ width: '100%' }} />
+        </Form.Item>
         <div style={{ display: 'flex', gap: 24 }}>
           <Form.Item name="isAvailable" label={t.menu.available} valuePropName="checked">
             <Switch />

@@ -21,8 +21,7 @@ const { Title } = Typography;
 
 export default function RestaurantsPage() {
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useRestaurants(page);
+  const { data, isLoading } = useRestaurants();
   const createRestaurant = useCreateRestaurant();
   const updateRestaurant = useUpdateRestaurant();
   const patchRestaurant = usePatchRestaurant();
@@ -163,16 +162,10 @@ export default function RestaurantsPage() {
       </div>
       <Table
         rowKey="id"
-        dataSource={data?.data}
+        dataSource={data ?? []}
         columns={columns}
         scroll={{ x: true }}
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total: data?.total,
-          onChange: (p) => setPage(p),
-          showTotal: (total) => `${t.common.total}: ${total}`,
-        }}
+        pagination={false}
       />
       <RestaurantModal
         open={modalOpen}

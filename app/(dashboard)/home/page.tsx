@@ -49,6 +49,7 @@ function ItemImage({ url, name }: { url: string | null; name: string }) {
 interface ItemsTableProps {
   catId: string;
   items: MenuItem[];
+  currency: string;
   t: ReturnType<typeof useI18n>['t'];
   patchItem: ReturnType<typeof usePatchMenuItem>;
   isDragDisabled?: boolean;
@@ -58,7 +59,7 @@ interface ItemsTableProps {
   onDelete: (id: string) => void;
 }
 
-function ItemsTable({ catId, items, t, patchItem, isDragDisabled, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
+function ItemsTable({ catId, items, currency, t, patchItem, isDragDisabled, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
   const COL_WIDTHS = [32, undefined, 120, 80, 70, 88] as const;
 
   return (
@@ -118,7 +119,7 @@ function ItemsTable({ catId, items, t, patchItem, isDragDisabled, onToggle, onTo
                         </div>
                       </td>
                       <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', width: COL_WIDTHS[2] }}>
-                        {item.price} {item.currency ?? ''}
+                        {item.price} {currency}
                       </td>
                       <td style={{ padding: '6px 8px', width: COL_WIDTHS[3] }}>
                         <Switch
@@ -167,6 +168,7 @@ function ItemsTable({ catId, items, t, patchItem, isDragDisabled, onToggle, onTo
 interface CategoryPanelProps {
   cat: Category;
   items: MenuItem[];
+  currency: string;
   isOpen: boolean;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
   isDragDisabled?: boolean;
@@ -185,7 +187,7 @@ interface CategoryPanelProps {
 }
 
 function CategoryPanel({
-  cat, items, isOpen, dragHandleProps, isDragDisabled, t, patchItem, patchCategory, updateCategory,
+  cat, items, currency, isOpen, dragHandleProps, isDragDisabled, t, patchItem, patchCategory, updateCategory,
   onToggleOpen, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable, onToggleActive, onInvalidate,
 }: CategoryPanelProps) {
   const { message } = App.useApp();
@@ -300,6 +302,7 @@ function CategoryPanel({
             <ItemsTable
               catId={cat.id}
               items={items}
+              currency={currency}
               t={t}
               patchItem={patchItem}
               isDragDisabled={isDragDisabled}
@@ -324,7 +327,7 @@ export default function HomePage() {
   const selectedId = useRestaurantStore((s) => s.selectedId);
 
   const { data: restaurantsData } = useAllRestaurants();
-  const selectedRestaurant = restaurantsData?.data?.find((r) => r.id === selectedId) ?? null;
+  const selectedRestaurant = restaurantsData?.find((r) => r.id === selectedId) ?? null;
   const { data: me } = useMe();
   const isSuperAdmin = me?.roles.includes('SuperAdmin') ?? false;
   const updateRestaurant = useUpdateRestaurant();
@@ -344,7 +347,7 @@ export default function HomePage() {
         ops.push(patchRestaurant.mutateAsync({ id: selectedId, isActive }));
       }
       await Promise.all(ops);
-      qc.invalidateQueries({ queryKey: ['restaurants-all'] });
+      qc.invalidateQueries({ queryKey: ['restaurants'] });
       setEditRestaurantOpen(false);
       setDrawerOpen(false);
       message.success(t.restaurants.saveSuccess);
@@ -374,7 +377,7 @@ export default function HomePage() {
   const deleteItem = useDeleteMenuItem(selectedId ?? '');
 
   const serverCategories = useMemo(() => menuData?.categories ?? [], [menuData]);
-  const serverItems = useMemo(() => menuData?.items?.data ?? [], [menuData]);
+  const serverItems = useMemo(() => menuData?.items ?? [], [menuData]);
 
   const [sortedCategories, setSortedCategories] = useState<Category[]>([]);
   const [sortedItems, setSortedItems] = useState<Record<string, MenuItem[]>>({});
@@ -676,6 +679,7 @@ export default function HomePage() {
                           <CategoryPanel
                             cat={cat}
                             items={visibleItems[cat.id] ?? []}
+                            currency={selectedRestaurant?.currency ?? ''}
                             isOpen={activeKeys.includes(cat.id)}
                             dragHandleProps={dragProvided.dragHandleProps}
                             isDragDisabled={isSearching}

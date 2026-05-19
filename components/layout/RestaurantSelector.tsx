@@ -36,7 +36,7 @@ export default function RestaurantSelector() {
     setSubmitLoading(true);
     try {
       const created = await createRestaurant.mutateAsync(values);
-      qc.invalidateQueries({ queryKey: ['restaurants-all'] });
+      qc.invalidateQueries({ queryKey: ['restaurants'] });
       qc.invalidateQueries({ queryKey: ME_KEY });
       setSelectedId(created.id);
       setModalOpen(false);

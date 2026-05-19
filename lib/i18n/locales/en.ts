@@ -178,6 +178,7 @@ const en = {
     deleteSuccess: 'Restaurant deleted',
     deleteFailed: 'Failed to delete restaurant',
     statusFailed: 'Failed to update status',
+    currency: 'Currency',
     required: 'Required',
     requireName: 'Enter name',
     requireAddress: 'Enter address',

@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoriesApi } from '@/lib/api/categories';
 import { CreateCategoryRequest, UpdateCategoryRequest, PatchCategoryRequest } from '@/types/api';
 
-export const useCategories = (restaurantId: string, page = 1, limit = 20) =>
+export const useCategories = (restaurantId: string) =>
   useQuery({
-    queryKey: ['categories', restaurantId, page, limit],
-    queryFn: () => categoriesApi.getAll(restaurantId, page, limit),
+    queryKey: ['categories', restaurantId],
+    queryFn: () => categoriesApi.getAll(restaurantId),
     enabled: !!restaurantId,
   });
 

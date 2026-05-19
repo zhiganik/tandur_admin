@@ -21,8 +21,7 @@ const { Title } = Typography;
 export default function CategoriesPage() {
   const { id: restaurantId } = useParams<{ id: string }>();
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useCategories(restaurantId, page);
+  const { data, isLoading } = useCategories(restaurantId);
   const createCategory = useCreateCategory(restaurantId);
   const updateCategory = useUpdateCategory(restaurantId);
   const patchCategory = usePatchCategory(restaurantId);
@@ -149,16 +148,10 @@ export default function CategoriesPage() {
       </div>
       <Table
         rowKey="id"
-        dataSource={data?.data}
+        dataSource={data ?? []}
         columns={columns}
         scroll={{ x: true }}
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total: data?.total,
-          onChange: (p) => setPage(p),
-          showTotal: (total) => `${t.common.total}: ${total}`,
-        }}
+        pagination={false}
       />
       <CategoryModal
         open={modalOpen}

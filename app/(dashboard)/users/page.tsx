@@ -38,7 +38,7 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
   }
 
   const assignedIds = new Set(user.restaurants?.map((r) => r.id) ?? []);
-  const available = allRestaurants?.data?.filter((r) => !assignedIds.has(r.id)) ?? [];
+  const available = allRestaurants?.filter((r) => !assignedIds.has(r.id)) ?? [];
 
   const handleUnassign = async (r: RestaurantRef) => {
     try {

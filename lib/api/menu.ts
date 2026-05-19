@@ -2,11 +2,8 @@ import { api } from './axios';
 import { MenuItem, MenuDto, CreateMenuItemRequest, UpdateMenuItemRequest, PatchMenuItemRequest } from '@/types/api';
 
 export const menuApi = {
-  getAll: (restaurantId: string, page = 1, limit = 20) =>
-    api.get<MenuDto>(`/admin/restaurants/${restaurantId}/menu`, { params: { Page: page, Limit: limit } }).then((r) => r.data.items),
-
   getFullMenu: (restaurantId: string) =>
-    api.get<MenuDto>(`/admin/restaurants/${restaurantId}/menu`, { params: { Page: 1, Limit: 20 } }).then((r) => r.data),
+    api.get<MenuDto>(`/admin/restaurants/${restaurantId}/menu`).then((r) => r.data),
 
   create: (data: CreateMenuItemRequest) =>
     api.post<MenuItem>('/admin/menu/items', data).then((r) => r.data),

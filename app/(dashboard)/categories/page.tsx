@@ -26,7 +26,7 @@ export default function CategoriesIndexPage() {
       <Title level={4} style={{ marginBottom: 16 }}>{t.nav.categories}</Title>
       <List
         bordered
-        dataSource={data?.data}
+        dataSource={data ?? []}
         style={{ maxWidth: 480, width: '100%', background: '#fff' }}
         renderItem={(r) => (
           <List.Item

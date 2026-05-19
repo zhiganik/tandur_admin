@@ -113,6 +113,7 @@ export interface Restaurant {
   isActive: boolean;
   isOpenNow: boolean;
   distanceKm: number | null;
+  currency: string;
 }
 
 export interface CreateRestaurantRequest {
@@ -123,6 +124,7 @@ export interface CreateRestaurantRequest {
   timeZone?: string | null;
   openTime: string;
   closeTime: string;
+  currency: string;
 }
 
 export interface UpdateRestaurantRequest {
@@ -132,6 +134,7 @@ export interface UpdateRestaurantRequest {
   longitude?: number;
   openTime?: string;
   closeTime?: string;
+  currency?: string;
 }
 
 export interface PatchRestaurantRequest {
@@ -173,7 +176,6 @@ export interface MenuItem {
   description: string | null;
   shortDescription: string | null;
   price: number;
-  currency: string | null;
   imageUrl: string | null;
   isAvailable: boolean;
   isActive: boolean;
@@ -187,7 +189,6 @@ export interface CreateMenuItemRequest {
   description?: string | null;
   shortDescription?: string | null;
   price: number;
-  currency?: string | null;
   isAvailable: boolean;
   isActive?: boolean;
   sortOrder?: number;
@@ -198,7 +199,6 @@ export interface UpdateMenuItemRequest {
   description?: string | null;
   shortDescription?: string | null;
   price: number;
-  currency?: string | null;
   categoryId: string;
   sortOrder?: number;
   isAvailable: boolean;
@@ -207,7 +207,7 @@ export interface UpdateMenuItemRequest {
 
 export interface MenuDto {
   categories: Category[];
-  items: PagedResult<MenuItem>;
+  items: MenuItem[];
 }
 
 export interface PatchMenuItemRequest {

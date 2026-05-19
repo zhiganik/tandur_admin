@@ -5,8 +5,9 @@ import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useMenuItems, useCreateMenuItem, useUpdateMenuItem, usePatchMenuItem, useDeleteMenuItem } from '@/lib/hooks/useMenu';
-import { useCategories } from '@/lib/hooks/useCategories';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { menuApi } from '@/lib/api/menu';
+import { useCreateMenuItem, useUpdateMenuItem, usePatchMenuItem, useDeleteMenuItem } from '@/lib/hooks/useMenu';
 import MenuItemModal, { MenuItemFormValues } from '@/components/menu/MenuItemModal';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { MenuItem } from '@/types/api';
@@ -17,9 +18,16 @@ export default function MenuPage() {
   const { id: restaurantId } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const { data: items, isLoading: itemsLoading } = useMenuItems(restaurantId, page);
-  const { data: categories, isLoading: categoriesLoading } = useCategories(restaurantId, 1, 20);
+  const qc = useQueryClient();
+
+  const { data: menuData, isLoading } = useQuery({
+    queryKey: ['full-menu', restaurantId],
+    queryFn: () => menuApi.getFullMenu(restaurantId),
+    enabled: !!restaurantId,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['full-menu', restaurantId] });
+
   const createMenuItem = useCreateMenuItem(restaurantId);
   const updateMenuItem = useUpdateMenuItem(restaurantId);
   const patchMenuItem = usePatchMenuItem(restaurantId);
@@ -32,10 +40,13 @@ export default function MenuPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const categories = menuData?.categories ?? [];
+  const allItems = menuData?.items ?? [];
+
   const filterCategoryId = searchParams.get('category');
   const displayItems = filterCategoryId
-    ? (items?.data ?? []).filter((i) => i.categoryId === filterCategoryId)
-    : items?.data;
+    ? allItems.filter((i) => i.categoryId === filterCategoryId)
+    : allItems;
 
   const handleSubmit = async (values: MenuItemFormValues) => {
     setSubmitLoading(true);
@@ -45,6 +56,7 @@ export default function MenuPage() {
       } else {
         await createMenuItem.mutateAsync({ ...values, restaurantId });
       }
+      invalidate();
       message.success(t.menu.saveSuccess);
       setModalOpen(false);
       setEditingItem(null);
@@ -58,6 +70,7 @@ export default function MenuPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteMenuItem.mutateAsync(id);
+      invalidate();
       message.success(t.menu.deleteSuccess);
     } catch {
       message.error(t.menu.deleteFailed);
@@ -68,6 +81,7 @@ export default function MenuPage() {
     setTogglingId(id);
     try {
       await patchMenuItem.mutateAsync({ id, data: { isAvailable } });
+      invalidate();
     } catch {
       message.error(t.menu.availabilityFailed);
     } finally {
@@ -76,7 +90,7 @@ export default function MenuPage() {
   };
 
   const categoryName = (id: string) =>
-    categories?.data?.find((c) => c.id === id)?.name ?? '—';
+    categories.find((c) => c.id === id)?.name ?? '—';
 
   const columns = [
     { title: t.menu.name, dataIndex: 'name', key: 'name' },
@@ -90,8 +104,7 @@ export default function MenuPage() {
       title: t.menu.price,
       key: 'price',
       width: 120,
-      render: (_: unknown, r: MenuItem) =>
-        `${r.price.toFixed(2)} ${r.currency ?? ''}`.trim(),
+      render: (_: unknown, r: MenuItem) => r.price.toFixed(2),
       responsive: ['sm'] as Breakpoint[],
     },
     {
@@ -111,7 +124,7 @@ export default function MenuPage() {
       key: 'isActive',
       width: 80,
       render: (_: unknown, r: MenuItem) =>
-        !r.isActive ? <Tag color="red">Deleted</Tag> : null,
+        !r.isActive ? <Tag color="red">Inactive</Tag> : null,
       responsive: ['sm'] as Breakpoint[],
     },
     {
@@ -143,7 +156,7 @@ export default function MenuPage() {
     },
   ];
 
-  if (itemsLoading || categoriesLoading) {
+  if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
         <Spin size="large" />
@@ -158,7 +171,7 @@ export default function MenuPage() {
           <Button onClick={() => router.back()}>{t.common.back}</Button>
           <Title level={4} style={{ margin: 0 }}>
             {t.menu.title}
-            {filterCategoryId && categories && (
+            {filterCategoryId && (
               <span style={{ fontWeight: 400, fontSize: 14, marginLeft: 8, color: '#888' }}>
                 — {categoryName(filterCategoryId)}
               </span>
@@ -178,20 +191,14 @@ export default function MenuPage() {
         dataSource={displayItems}
         columns={columns}
         scroll={{ x: true }}
-        pagination={{
-          current: page,
-          pageSize: 20,
-          total: filterCategoryId ? displayItems?.length : items?.total,
-          onChange: (p) => setPage(p),
-          showTotal: (total) => `${t.common.total}: ${total}`,
-        }}
+        pagination={false}
       />
       <MenuItemModal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditingItem(null); }}
         onSubmit={handleSubmit}
         initialValues={editingItem}
-        categories={categories?.data ?? []}
+        categories={categories}
         loading={submitLoading}
       />
     </div>
