@@ -58,19 +58,29 @@ interface ItemsTableProps {
 }
 
 function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
+  const COL_WIDTHS = [32, undefined, 120, 80, 70, 88] as const;
+
   return (
     <Droppable droppableId={catId} type="ITEM">
       {(dropProvided) => (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: COL_WIDTHS[0] }} />
+              <col />
+              <col style={{ width: COL_WIDTHS[2] }} />
+              <col style={{ width: COL_WIDTHS[3] }} />
+              <col style={{ width: COL_WIDTHS[4] }} />
+              <col style={{ width: COL_WIDTHS[5] }} />
+            </colgroup>
             <thead>
               <tr style={{ borderBottom: '1px solid #f0f0f0', textAlign: 'left' }}>
-                <th style={{ padding: '6px 8px', width: 24 }} />
+                <th style={{ padding: '6px 8px' }} />
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.name}</th>
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.price}</th>
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.available}</th>
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.active}</th>
-                <th style={{ padding: '6px 8px', width: 80 }} />
+                <th style={{ padding: '6px 8px' }} />
               </tr>
             </thead>
             <tbody ref={dropProvided.innerRef} {...dropProvided.droppableProps} style={{ minHeight: 40 }}>
@@ -86,29 +96,30 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEd
                       style={{
                         borderBottom: '1px solid #f9f9f9',
                         background: dragSnapshot.isDragging ? '#fafafa' : undefined,
+                        ...(dragSnapshot.isDragging ? { display: 'table', width: '100%', tableLayout: 'fixed' } : {}),
                         ...dragProvided.draggableProps.style,
                       }}
                     >
-                      <td style={{ padding: '6px 8px' }}>
+                      <td style={{ padding: '6px 8px', width: COL_WIDTHS[0] }}>
                         <span {...dragProvided.dragHandleProps} style={{ cursor: 'grab', color: 'rgba(0,0,0,0.25)' }}>
                           <HolderOutlined />
                         </span>
                       </td>
-                      <td style={{ padding: '6px 8px' }}>
+                      <td style={{ padding: '6px 8px', overflow: 'hidden' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <ItemImage url={item.imageUrl} name={item.name} />
-                          <div>
-                            <div>{item.name}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                             {item.shortDescription && (
-                              <div style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>{item.shortDescription}</div>
+                              <div style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.shortDescription}</div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', width: COL_WIDTHS[2] }}>
                         {item.price} {item.currency ?? ''}
                       </td>
-                      <td style={{ padding: '6px 8px' }}>
+                      <td style={{ padding: '6px 8px', width: COL_WIDTHS[3] }}>
                         <Switch
                           size="small"
                           checked={item.isAvailable}
@@ -116,7 +127,7 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEd
                           loading={patchItem.isPending && patchItem.variables?.id === item.id}
                         />
                       </td>
-                      <td style={{ padding: '6px 8px' }}>
+                      <td style={{ padding: '6px 8px', width: COL_WIDTHS[4] }}>
                         <Switch
                           size="small"
                           checked={item.isActive}
@@ -124,7 +135,7 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEd
                           loading={patchItem.isPending && patchItem.variables?.id === item.id}
                         />
                       </td>
-                      <td style={{ padding: '6px 8px' }}>
+                      <td style={{ padding: '6px 8px', width: COL_WIDTHS[5] }}>
                         <Space size={4}>
                           <Button size="small" icon={<EditOutlined />} type="text" onClick={() => onEdit(item)} />
                           <Popconfirm
