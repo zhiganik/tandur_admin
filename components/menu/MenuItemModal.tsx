@@ -14,6 +14,7 @@ export interface MenuItemFormValues {
   categoryId: string;
   sortOrder: number;
   isAvailable: boolean;
+  isActive: boolean;
 }
 
 interface Props {
@@ -45,10 +46,11 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
           categoryId: initialValues.categoryId,
           sortOrder: initialValues.sortOrder,
           isAvailable: initialValues.isAvailable,
+          isActive: initialValues.isActive,
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ isAvailable: true, sortOrder: 0, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
+        form.setFieldsValue({ isAvailable: true, isActive: true, sortOrder: 0, currency: 'UAH', ...(defaultCategoryId ? { categoryId: defaultCategoryId } : {}) });
       }
     }
   }, [open, initialValues, form]);
@@ -112,9 +114,14 @@ export default function MenuItemModal({ open, onClose, onSubmit, initialValues, 
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
         </div>
-        <Form.Item name="isAvailable" label={t.menu.available} valuePropName="checked">
-          <Switch />
-        </Form.Item>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <Form.Item name="isAvailable" label={t.menu.available} valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="isActive" label={t.menu.active} valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </div>
       </Form>
     </Modal>
   );

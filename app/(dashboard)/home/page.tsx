@@ -376,11 +376,16 @@ export default function HomePage() {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const allExpanded = sortedCategories.length > 0 && activeKeys.length === sortedCategories.length;
 
+  // Reset open panels when switching restaurant
   useEffect(() => {
-    if (sortedCategories.length > 0 && activeKeys.length === 0) {
+    setActiveKeys([]);
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (sortedCategories.length > 0) {
       setActiveKeys(sortedCategories.map((c) => c.id));
     }
-  }, [sortedCategories.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sortedCategories.length, selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -482,7 +487,7 @@ export default function HomePage() {
 
   const handleSaveItem = async (values: MenuItemFormValues) => {
     try {
-      if (editingItem) await updateItem.mutateAsync({ id: editingItem.id, data: values });
+      if (editingItem) await updateItem.mutateAsync({ id: editingItem.id, data: { ...values, isActive: values.isActive ?? editingItem.isActive } });
       else await createItem.mutateAsync({ ...values, restaurantId: selectedId!, categoryId: itemCategoryId ?? values.categoryId });
       invalidate();
       setItemModalOpen(false);

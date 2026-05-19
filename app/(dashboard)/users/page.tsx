@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Table, Button, Popconfirm, Typography, App, Spin, Input, Select, Space, Tag, Drawer, Popover } from 'antd';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
-import { DeleteOutlined, SearchOutlined, KeyOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser, useAssignRestaurant, useUnassignRestaurant, useResetAdminPassword } from '@/lib/hooks/useUsers';
 import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
 import { useMe } from '@/lib/hooks/useMe';
@@ -235,7 +235,7 @@ export default function UsersPage() {
               cancelText={t.common.no}
             >
               <Button
-                icon={<KeyOutlined />}
+                icon={<MailOutlined />}
                 type="text"
                 loading={resetPassword.isPending && resetPassword.variables === r.id}
               />

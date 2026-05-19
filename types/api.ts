@@ -189,6 +189,7 @@ export interface CreateMenuItemRequest {
   price: number;
   currency?: string | null;
   isAvailable: boolean;
+  isActive?: boolean;
   sortOrder: number;
 }
 
@@ -201,6 +202,7 @@ export interface UpdateMenuItemRequest {
   categoryId: string;
   sortOrder: number;
   isAvailable: boolean;
+  isActive: boolean;
 }
 
 export interface MenuDto {
