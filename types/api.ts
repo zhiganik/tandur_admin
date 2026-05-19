@@ -203,6 +203,7 @@ export interface MenuDto {
 
 export interface PatchMenuItemRequest {
   isAvailable?: boolean | null;
+  isActive?: boolean | null;
   price?: number | null;
   categoryId?: string | null;
   sortOrder?: number | null;

@@ -128,6 +128,7 @@ const en = {
     price: 'Price',
     category: 'Category',
     available: 'Available',
+    active: 'Active',
     addButton: 'Add item',
     addTitle: 'Add menu item',
     editTitle: 'Edit menu item',

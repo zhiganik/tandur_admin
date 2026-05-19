@@ -52,11 +52,12 @@ interface ItemsTableProps {
   t: ReturnType<typeof useI18n>['t'];
   patchItem: ReturnType<typeof usePatchMenuItem>;
   onToggle: (id: string, v: boolean) => void;
+  onToggleActive: (id: string, v: boolean) => void;
   onEdit: (item: MenuItem) => void;
   onDelete: (id: string) => void;
 }
 
-function ItemsTable({ catId, items, t, patchItem, onToggle, onEdit, onDelete }: ItemsTableProps) {
+function ItemsTable({ catId, items, t, patchItem, onToggle, onToggleActive, onEdit, onDelete }: ItemsTableProps) {
   return (
     <Droppable droppableId={catId} type="ITEM">
       {(dropProvided) => (
@@ -68,12 +69,13 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onEdit, onDelete }: 
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.name}</th>
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.price}</th>
                 <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.available}</th>
+                <th style={{ padding: '6px 8px', fontWeight: 500 }}>{t.menu.active}</th>
                 <th style={{ padding: '6px 8px', width: 80 }} />
               </tr>
             </thead>
             <tbody ref={dropProvided.innerRef} {...dropProvided.droppableProps} style={{ minHeight: 40 }}>
               {items.length === 0 && (
-                <tr><td colSpan={5} style={{ padding: '8px', color: 'rgba(0,0,0,0.35)', fontSize: 12 }}>No items</td></tr>
+                <tr><td colSpan={6} style={{ padding: '8px', color: 'rgba(0,0,0,0.35)', fontSize: 12 }}>No items</td></tr>
               )}
               {items.map((item, idx) => (
                 <Draggable key={item.id} draggableId={item.id} index={idx}>
@@ -111,6 +113,14 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onEdit, onDelete }: 
                           size="small"
                           checked={item.isAvailable}
                           onChange={(v) => onToggle(item.id, v)}
+                          loading={patchItem.isPending && patchItem.variables?.id === item.id}
+                        />
+                      </td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <Switch
+                          size="small"
+                          checked={item.isActive}
+                          onChange={(v) => onToggleActive(item.id, v)}
                           loading={patchItem.isPending && patchItem.variables?.id === item.id}
                         />
                       </td>
@@ -157,12 +167,13 @@ interface CategoryPanelProps {
   onEditItem: (item: MenuItem) => void;
   onDeleteItem: (id: string) => void;
   onToggleAvailable: (id: string, v: boolean) => void;
+  onToggleActive: (id: string, v: boolean) => void;
   onInvalidate: () => void;
 }
 
 function CategoryPanel({
   cat, items, isOpen, dragHandleProps, t, patchItem, patchCategory, updateCategory,
-  onToggleOpen, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable, onInvalidate,
+  onToggleOpen, onDeleteCat, onAddItem, onEditItem, onDeleteItem, onToggleAvailable, onToggleActive, onInvalidate,
 }: CategoryPanelProps) {
   const { message } = App.useApp();
   const [editing, setEditing] = useState(false);
@@ -279,6 +290,7 @@ function CategoryPanel({
               t={t}
               patchItem={patchItem}
               onToggle={onToggleAvailable}
+              onToggleActive={onToggleActive}
               onEdit={onEditItem}
               onDelete={onDeleteItem}
             />
@@ -500,6 +512,15 @@ export default function HomePage() {
     }
   };
 
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    try {
+      await patchItem.mutateAsync({ id, data: { isActive } });
+      invalidate();
+    } catch {
+      message.error(t.menu.availabilityFailed);
+    }
+  };
+
   if (!selectedId) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
@@ -591,6 +612,7 @@ export default function HomePage() {
                             onEditItem={(item) => { setEditingItem(item); setItemCategoryId(item.categoryId); setItemModalOpen(true); }}
                             onDeleteItem={handleDeleteItem}
                             onToggleAvailable={handleToggleAvailable}
+                            onToggleActive={handleToggleActive}
                             onInvalidate={invalidate}
                           />
                         </div>
