@@ -731,6 +731,7 @@ export default function HomePage() {
               </Descriptions.Item>
               <Descriptions.Item label={t.restaurants.latitude}>{selectedRestaurant.latitude}</Descriptions.Item>
               <Descriptions.Item label={t.restaurants.longitude}>{selectedRestaurant.longitude}</Descriptions.Item>
+              <Descriptions.Item label={t.restaurants.currency}>{selectedRestaurant.currency}</Descriptions.Item>
               <Descriptions.Item label={t.restaurants.active}>
                 <Switch size="small" checked={selectedRestaurant.isActive} disabled />
               </Descriptions.Item>
