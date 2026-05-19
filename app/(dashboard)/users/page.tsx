@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Table, Button, Popconfirm, Typography, App, Spin, Input, Select, Space, Tag, Drawer, Popover } from 'antd';
+import { useState, useRef } from 'react';
+import { Table, Button, Popconfirm, Typography, App, Spin, Input, Space, Tag, Drawer, Popover } from 'antd';
+import type { InputRef } from 'antd';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
+import type { FilterDropdownProps } from 'antd/es/table/interface';
 import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser, useAssignRestaurant, useUnassignRestaurant, useResetAdminPassword } from '@/lib/hooks/useUsers';
 import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
@@ -18,6 +20,8 @@ const ROLE_COLORS: Record<string, string> = {
   SuperAdmin: 'purple',
 };
 
+const ALL_ROLES = ['User', 'Admin', 'SuperAdmin'];
+
 function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boolean }) {
   const { t } = useI18n();
   const { message } = App.useApp();
@@ -26,6 +30,13 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
   const { data: allRestaurants } = useAllRestaurants();
 
   const isAdmin = user.roles.includes('Admin');
+  const isUserSuperAdmin = user.roles.includes('SuperAdmin');
+
+  // SuperAdmin users always have access to all restaurants — show "All" instead of list
+  if (isUserSuperAdmin) {
+    return <Tag color="purple">All</Tag>;
+  }
+
   if (!isSuperAdmin || !isAdmin) {
     if (!user.restaurants?.length) return <span style={{ color: 'rgba(0,0,0,0.25)' }}>—</span>;
     return (
@@ -97,44 +108,63 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
   );
 }
 
+// Column search dropdown component
+function ColumnSearchFilter({ confirm, clearFilters, selectedKeys, setSelectedKeys, placeholder }: FilterDropdownProps & { placeholder: string }) {
+  const inputRef = useRef<InputRef>(null);
+  return (
+    <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+      <Input
+        ref={inputRef}
+        placeholder={placeholder}
+        value={selectedKeys[0] as string}
+        onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+        onPressEnter={() => confirm()}
+        style={{ marginBottom: 8, display: 'block' }}
+        autoFocus
+      />
+      <Space>
+        <Button
+          type="primary"
+          onClick={() => confirm()}
+          icon={<SearchOutlined />}
+          size="small"
+          style={{ width: 90 }}
+        >
+          Search
+        </Button>
+        <Button
+          onClick={() => { clearFilters?.(); confirm(); }}
+          size="small"
+          style={{ width: 90 }}
+        >
+          Reset
+        </Button>
+      </Space>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [drawerUser, setDrawerUser] = useState<User | null>(null);
-  const { data, isLoading } = useUsers(page);
+
+  const { data, isLoading } = useUsers({
+    page,
+    limit: 20,
+    search: search || undefined,
+    role: roleFilter.length ? roleFilter : undefined,
+    sort: sortOrder,
+  });
+
   const deleteUser = useDeleteUser();
   const resetPassword = useResetAdminPassword();
   const { data: me } = useMe();
   const isSuperAdmin = me?.roles.includes('SuperAdmin') ?? false;
   const { message } = App.useApp();
   const { t } = useI18n();
-
-  const allRoles = useMemo(() => {
-    if (!data?.data) return [];
-    const set = new Set<string>();
-    data.data.forEach((u) => u.roles.forEach((r) => set.add(r)));
-    return Array.from(set).sort();
-  }, [data]);
-
-  const filtered = useMemo(() => {
-    if (!data?.data) return [];
-    const q = search.trim().toLowerCase();
-    return data.data.filter((u) => {
-      if (roleFilter && !u.roles.includes(roleFilter)) return false;
-      if (!q) return true;
-      const name = [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase();
-      return (
-        name.includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.includes(q) ||
-        u.id.toLowerCase().includes(q)
-      );
-    });
-  }, [data, search, roleFilter]);
-
-  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
-  const handleRole = (v: string | null) => { setRoleFilter(v); setPage(1); };
 
   const handleDelete = async (id: string) => {
     try {
@@ -178,6 +208,17 @@ export default function UsersPage() {
       key: 'email',
       render: (v: string | null) => v || '—',
       responsive: ['md'] as Breakpoint[],
+      filterDropdown: (props: FilterDropdownProps) => (
+        <ColumnSearchFilter {...props} placeholder={t.users.email} />
+      ),
+      filterIcon: (filtered: boolean) => (
+        <SearchOutlined style={{ color: filtered ? '#1677ff' : undefined }} />
+      ),
+      onFilter: () => true, // server-side
+      filteredValue: search && !search.includes(' ') ? [search] : null,
+      onFilterDropdownOpenChange: (open: boolean) => {
+        if (!open && search) return;
+      },
     },
     {
       title: t.users.phone,
@@ -205,6 +246,9 @@ export default function UsersPage() {
         </>
       ),
       responsive: ['sm'] as Breakpoint[],
+      filters: ALL_ROLES.map((r) => ({ text: r, value: r })),
+      filteredValue: roleFilter.length ? roleFilter : null,
+      onFilter: () => true, // server-side
     },
     {
       title: t.users.restaurants,
@@ -220,6 +264,9 @@ export default function UsersPage() {
       key: 'createdAt',
       render: (v: string) => new Date(v).toLocaleDateString('en-GB'),
       responsive: ['lg'] as Breakpoint[],
+      sorter: true,
+      sortOrder: sortOrder === 'asc' ? ('ascend' as const) : ('descend' as const),
+      showSorterTooltip: false,
     },
     {
       title: '',
@@ -261,7 +308,7 @@ export default function UsersPage() {
     },
   ];
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
         <Spin size="large" />
@@ -272,35 +319,37 @@ export default function UsersPage() {
   return (
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t.users.title}</Title>
-      <Space wrap style={{ marginBottom: 16, width: '100%' }}>
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder={t.users.searchPlaceholder}
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          allowClear
-          style={{ width: 260 }}
-        />
-        {allRoles.length > 0 && (
-          <Select
-            value={roleFilter}
-            onChange={handleRole}
-            allowClear
-            placeholder={t.users.filterRole}
-            style={{ width: 160 }}
-            options={allRoles.map((r) => ({ value: r, label: r }))}
-          />
-        )}
-      </Space>
       <Table
         rowKey="id"
-        dataSource={filtered}
+        dataSource={data?.data ?? []}
         columns={columns}
         scroll={{ x: true }}
+        loading={isLoading}
+        onChange={(_pagination, filters, sorter) => {
+          // Search filter (email column)
+          const emailFilter = filters['email'];
+          if (emailFilter !== undefined) {
+            setSearch((emailFilter?.[0] as string) ?? '');
+            setPage(1);
+          }
+
+          // Role filter
+          const roleFilters = filters['roles'];
+          if (roleFilters !== undefined) {
+            setRoleFilter((roleFilters as string[]) ?? []);
+            setPage(1);
+          }
+
+          // Sort
+          if (!Array.isArray(sorter) && sorter.field === 'createdAt') {
+            setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+            setPage(1);
+          }
+        }}
         pagination={{
           current: page,
           pageSize: 20,
-          total: search || roleFilter ? filtered.length : data?.total,
+          total: data?.total,
           onChange: (p) => setPage(p),
           showTotal: (total) => `${t.common.total}: ${total}`,
         }}

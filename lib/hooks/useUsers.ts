@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersApi } from '@/lib/api/users';
+import { usersApi, UsersParams } from '@/lib/api/users';
 
-export const useUsers = (page = 1, limit = 20) =>
+export const useUsers = (params: UsersParams = {}) =>
   useQuery({
-    queryKey: ['users', page, limit],
-    queryFn: () => usersApi.getAll(page, limit),
+    queryKey: ['users', params],
+    queryFn: () => usersApi.getAll(params),
   });
 
 export const useDeleteUser = () => {
