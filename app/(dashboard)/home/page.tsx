@@ -393,16 +393,14 @@ export default function HomePage() {
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const allExpanded = sortedCategories.length > 0 && activeKeys.length === sortedCategories.length;
 
-  // Reset open panels when switching restaurant
+  // Open all panels whenever the restaurant changes and its categories load
+  const lastExpandedRestaurantId = useRef<string | null>(null);
   useEffect(() => {
-    setActiveKeys([]);
-  }, [selectedId]);
-
-  useEffect(() => {
-    if (sortedCategories.length > 0) {
+    if (selectedId && selectedId !== lastExpandedRestaurantId.current && sortedCategories.length > 0) {
+      lastExpandedRestaurantId.current = selectedId;
       setActiveKeys(sortedCategories.map((c) => c.id));
     }
-  }, [sortedCategories.length, selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }); // intentionally no dep array — runs after every render, guarded by ref
 
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
