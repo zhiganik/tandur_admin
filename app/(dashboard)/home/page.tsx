@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Collapse, Button, Typography, App, Spin, Switch, Space, Popconfirm, Badge, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UnorderedListOutlined, MinusSquareOutlined, HolderOutlined, PictureOutlined } from '@ant-design/icons';
 import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useQuery } from '@tanstack/react-query';
 import { menuApi } from '@/lib/api/menu';
@@ -16,6 +16,30 @@ import MenuItemModal, { MenuItemFormValues } from '@/components/menu/MenuItemMod
 import { Category, MenuItem } from '@/types/api';
 
 const { Title, Text } = Typography;
+
+// ── Item image ───────────────────────────────────────────────────────────────
+
+const placeholder = (
+  <div style={{
+    width: 40, height: 40, borderRadius: 4, flexShrink: 0,
+    background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }}>
+    <PictureOutlined style={{ fontSize: 18, color: 'rgba(0,0,0,0.2)' }} />
+  </div>
+);
+
+function ItemImage({ url, name }: { url: string | null; name: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!url || broken) return placeholder;
+  return (
+    <img
+      src={url}
+      alt={name}
+      onError={() => setBroken(true)}
+      style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
+    />
+  );
+}
 
 // ── Item rows ────────────────────────────────────────────────────────────────
 
@@ -63,10 +87,15 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onEdit, onDelete }: 
                         </span>
                       </td>
                       <td style={{ padding: '6px 8px' }}>
-                        <div>{item.name}</div>
-                        {item.shortDescription && (
-                          <div style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>{item.shortDescription}</div>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <ItemImage url={item.imageUrl} name={item.name} />
+                          <div>
+                            <div>{item.name}</div>
+                            {item.shortDescription && (
+                              <div style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>{item.shortDescription}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
                         {item.price} {item.currency ?? ''}
