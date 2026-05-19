@@ -68,7 +68,10 @@ function ItemsTable({ catId, items, t, patchItem, onToggle, onEdit, onDelete }: 
                 <th style={{ padding: '6px 8px', width: 80 }} />
               </tr>
             </thead>
-            <tbody ref={dropProvided.innerRef} {...dropProvided.droppableProps}>
+            <tbody ref={dropProvided.innerRef} {...dropProvided.droppableProps} style={{ minHeight: 40 }}>
+              {items.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: '8px', color: 'rgba(0,0,0,0.35)', fontSize: 12 }}>No items</td></tr>
+              )}
               {items.map((item, idx) => (
                 <Draggable key={item.id} draggableId={item.id} index={idx}>
                   {(dragProvided, dragSnapshot) => (
@@ -195,19 +198,15 @@ function CategoryPanel({
             >
               {t.menu.addButton}
             </Button>
-            {items.length === 0 ? (
-              <Text type="secondary" style={{ display: 'block', paddingBottom: 8 }}>No items</Text>
-            ) : (
-              <ItemsTable
-                catId={cat.id}
-                items={items}
-                t={t}
-                patchItem={patchItem}
-                onToggle={onToggleAvailable}
-                onEdit={onEditItem}
-                onDelete={onDeleteItem}
-              />
-            )}
+            <ItemsTable
+              catId={cat.id}
+              items={items}
+              t={t}
+              patchItem={patchItem}
+              onToggle={onToggleAvailable}
+              onEdit={onEditItem}
+              onDelete={onDeleteItem}
+            />
           </div>
         ),
       }]}
@@ -300,17 +299,41 @@ export default function HomePage() {
     }
 
     if (type === 'ITEM') {
-      const catId = source.droppableId;
-      const items = [...(sortedItems[catId] ?? [])];
-      const [moved] = items.splice(source.index, 1);
-      items.splice(destination.index, 0, moved);
-      setSortedItems((prev) => ({ ...prev, [catId]: items }));
+      const srcCatId = source.droppableId;
+      const dstCatId = destination.droppableId;
+      const srcItems = [...(sortedItems[srcCatId] ?? [])];
+      const [moved] = srcItems.splice(source.index, 1);
+
+      let newSorted: Record<string, MenuItem[]>;
+      if (srcCatId === dstCatId) {
+        srcItems.splice(destination.index, 0, moved);
+        newSorted = { ...sortedItems, [srcCatId]: srcItems };
+      } else {
+        const dstItems = [...(sortedItems[dstCatId] ?? [])];
+        dstItems.splice(destination.index, 0, { ...moved, categoryId: dstCatId });
+        newSorted = { ...sortedItems, [srcCatId]: srcItems, [dstCatId]: dstItems };
+      }
+      setSortedItems(newSorted);
+
       try {
-        await Promise.all(
-          items.map((item, idx) =>
-            item.sortOrder !== idx ? patchItem.mutateAsync({ id: item.id, data: { sortOrder: idx } }) : Promise.resolve()
-          )
-        );
+        const patches: Promise<unknown>[] = [];
+        if (srcCatId !== dstCatId) {
+          // Change category + set sortOrder in destination
+          patches.push(patchItem.mutateAsync({ id: moved.id, data: { categoryId: dstCatId, sortOrder: destination.index } }));
+          // Re-order remaining items in source
+          newSorted[srcCatId].forEach((item, idx) => {
+            if (item.sortOrder !== idx) patches.push(patchItem.mutateAsync({ id: item.id, data: { sortOrder: idx } }));
+          });
+          // Re-order items in destination (skip moved, already patched)
+          newSorted[dstCatId].forEach((item, idx) => {
+            if (item.id !== moved.id && item.sortOrder !== idx) patches.push(patchItem.mutateAsync({ id: item.id, data: { sortOrder: idx } }));
+          });
+        } else {
+          newSorted[srcCatId].forEach((item, idx) => {
+            if (item.sortOrder !== idx) patches.push(patchItem.mutateAsync({ id: item.id, data: { sortOrder: idx } }));
+          });
+        }
+        await Promise.all(patches);
         invalidate();
       } catch {
         message.error(t.menu.saveFailed);
