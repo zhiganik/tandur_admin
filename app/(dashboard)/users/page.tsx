@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Table, Button, Popconfirm, Typography, App, Spin, Input, Space, Tag, Drawer, Popover } from 'antd';
-import type { InputRef } from 'antd';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
-import type { FilterDropdownProps } from 'antd/es/table/interface';
+import type { SorterResult } from 'antd/es/table/interface';
 import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser, useAssignRestaurant, useUnassignRestaurant, useResetAdminPassword } from '@/lib/hooks/useUsers';
 import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
@@ -32,7 +31,6 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
   const isAdmin = user.roles.includes('Admin');
   const isUserSuperAdmin = user.roles.includes('SuperAdmin');
 
-  // SuperAdmin users always have access to all restaurants — show "All" instead of list
   if (isUserSuperAdmin) {
     return <Tag color="purple">All</Tag>;
   }
@@ -108,47 +106,12 @@ function RestaurantsCell({ user, isSuperAdmin }: { user: User; isSuperAdmin: boo
   );
 }
 
-// Column search dropdown component
-function ColumnSearchFilter({ confirm, clearFilters, selectedKeys, setSelectedKeys, placeholder }: FilterDropdownProps & { placeholder: string }) {
-  const inputRef = useRef<InputRef>(null);
-  return (
-    <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-      <Input
-        ref={inputRef}
-        placeholder={placeholder}
-        value={selectedKeys[0] as string}
-        onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-        onPressEnter={() => confirm()}
-        style={{ marginBottom: 8, display: 'block' }}
-        autoFocus
-      />
-      <Space>
-        <Button
-          type="primary"
-          onClick={() => confirm()}
-          icon={<SearchOutlined />}
-          size="small"
-          style={{ width: 90 }}
-        >
-          Search
-        </Button>
-        <Button
-          onClick={() => { clearFilters?.(); confirm(); }}
-          size="small"
-          style={{ width: 90 }}
-        >
-          Reset
-        </Button>
-      </Space>
-    </div>
-  );
-}
-
 export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  // null = no explicit sort (server default = desc), otherwise controlled
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
   const [drawerUser, setDrawerUser] = useState<User | null>(null);
 
   const { data, isLoading } = useUsers({
@@ -156,7 +119,7 @@ export default function UsersPage() {
     limit: 20,
     search: search || undefined,
     role: roleFilter.length ? roleFilter : undefined,
-    sort: sortOrder,
+    sort: sortOrder ?? undefined,
   });
 
   const deleteUser = useDeleteUser();
@@ -184,6 +147,8 @@ export default function UsersPage() {
     }
   };
 
+  const antSortOrder = sortOrder === 'asc' ? ('ascend' as const) : sortOrder === 'desc' ? ('descend' as const) : undefined;
+
   const columns = [
     {
       title: t.users.id,
@@ -208,17 +173,6 @@ export default function UsersPage() {
       key: 'email',
       render: (v: string | null) => v || '—',
       responsive: ['md'] as Breakpoint[],
-      filterDropdown: (props: FilterDropdownProps) => (
-        <ColumnSearchFilter {...props} placeholder={t.users.email} />
-      ),
-      filterIcon: (filtered: boolean) => (
-        <SearchOutlined style={{ color: filtered ? '#1677ff' : undefined }} />
-      ),
-      onFilter: () => true, // server-side
-      filteredValue: search && !search.includes(' ') ? [search] : null,
-      onFilterDropdownOpenChange: (open: boolean) => {
-        if (!open && search) return;
-      },
     },
     {
       title: t.users.phone,
@@ -237,7 +191,7 @@ export default function UsersPage() {
     {
       title: t.users.role,
       dataIndex: 'roles',
-      key: 'roles',
+      key: 'role',
       render: (roles: string[]) => (
         <>
           {roles.map((r) => (
@@ -248,7 +202,7 @@ export default function UsersPage() {
       responsive: ['sm'] as Breakpoint[],
       filters: ALL_ROLES.map((r) => ({ text: r, value: r })),
       filteredValue: roleFilter.length ? roleFilter : null,
-      onFilter: () => true, // server-side
+      onFilter: () => true,
     },
     {
       title: t.users.restaurants,
@@ -265,7 +219,7 @@ export default function UsersPage() {
       render: (v: string) => new Date(v).toLocaleDateString('en-GB'),
       responsive: ['lg'] as Breakpoint[],
       sorter: true,
-      sortOrder: sortOrder === 'asc' ? ('ascend' as const) : ('descend' as const),
+      sortOrder: antSortOrder,
       showSorterTooltip: false,
     },
     {
@@ -319,6 +273,14 @@ export default function UsersPage() {
   return (
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t.users.title}</Title>
+      <Input
+        prefix={<SearchOutlined />}
+        placeholder={t.users.searchPlaceholder}
+        value={search}
+        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        allowClear
+        style={{ width: 300, marginBottom: 16 }}
+      />
       <Table
         rowKey="id"
         dataSource={data?.data ?? []}
@@ -326,23 +288,17 @@ export default function UsersPage() {
         scroll={{ x: true }}
         loading={isLoading}
         onChange={(_pagination, filters, sorter) => {
-          // Search filter (email column)
-          const emailFilter = filters['email'];
-          if (emailFilter !== undefined) {
-            setSearch((emailFilter?.[0] as string) ?? '');
-            setPage(1);
-          }
-
-          // Role filter
-          const roleFilters = filters['roles'];
+          const roleFilters = filters['role'];
           if (roleFilters !== undefined) {
             setRoleFilter((roleFilters as string[]) ?? []);
             setPage(1);
           }
 
-          // Sort
-          if (!Array.isArray(sorter) && sorter.field === 'createdAt') {
-            setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+          const s = sorter as SorterResult<User>;
+          if (s.field === 'createdAt') {
+            if (s.order === 'ascend') setSortOrder('asc');
+            else if (s.order === 'descend') setSortOrder('desc');
+            else setSortOrder(null);
             setPage(1);
           }
         }}
