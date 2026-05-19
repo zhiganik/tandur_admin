@@ -4,7 +4,7 @@ import { useState, useCallback, useDeferredValue } from 'react';
 import { Table, Button, Popconfirm, Typography, App, Input, Space, Tag, Drawer, Popover, Tooltip } from 'antd';
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver';
 import type { SorterResult, FilterValue, TablePaginationConfig, TableCurrentDataSource } from 'antd/es/table/interface';
-import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons';
+import { DeleteOutlined, SearchOutlined, MailOutlined, PlusOutlined, CopyOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { useUsers, useDeleteUser, useAssignRestaurant, useUnassignRestaurant, useResetAdminPassword } from '@/lib/hooks/useUsers';
 import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
 import { useMe } from '@/lib/hooks/useMe';
@@ -155,32 +155,22 @@ export default function UsersPage() {
     navigator.clipboard.writeText(id);
   }, []);
 
-  const antSortOrder = sortOrder === 'asc' ? ('ascend' as const) : ('descend' as const);
-
   const handleTableChange = useCallback(
-    (_pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, sorter: SorterResult<User> | SorterResult<User>[], _extra: TableCurrentDataSource<User>) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    (_pagination: TablePaginationConfig, filters: Record<string, FilterValue | null>, _sorter: SorterResult<User> | SorterResult<User>[], _extra: TableCurrentDataSource<User>) => { // eslint-disable-line @typescript-eslint/no-unused-vars
       // Role filter — only update if the role key is present in filters
       if ('role' in filters) {
         const newRoles = (filters['role'] as string[]) ?? [];
         setRoleFilter(newRoles);
         setPage(1);
       }
-
-      // Sort
-      const s = Array.isArray(sorter) ? sorter[0] : sorter;
-      if (s?.field === 'createdAt') {
-        // Toggle: if already same direction, flip it; if undefined (shouldn't happen with controlled), keep desc
-        setSortOrder((prev) => {
-          if (s.order === 'ascend') return 'asc';
-          if (s.order === 'descend') return 'desc';
-          // order undefined = user clicked to "clear" — flip instead
-          return prev === 'asc' ? 'desc' : 'asc';
-        });
-        setPage(1);
-      }
     },
     [],
   );
+
+  const handleSortToggle = useCallback(() => {
+    setSortOrder((prev) => prev === 'asc' ? 'desc' : 'asc');
+    setPage(1);
+  }, []);
 
   const columns = [
     {
@@ -250,14 +240,21 @@ export default function UsersPage() {
       responsive: ['lg'] as Breakpoint[],
     },
     {
-      title: t.users.createdAt,
+      title: (
+        <span
+          onClick={handleSortToggle}
+          style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+        >
+          {t.users.createdAt}{' '}
+          {sortOrder === 'asc'
+            ? <ArrowUpOutlined style={{ fontSize: 11, color: '#1677ff' }} />
+            : <ArrowDownOutlined style={{ fontSize: 11, color: '#1677ff' }} />}
+        </span>
+      ),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (v: string) => new Date(v).toLocaleDateString('en-GB'),
       responsive: ['lg'] as Breakpoint[],
-      sorter: true,
-      sortOrder: antSortOrder,
-      showSorterTooltip: false,
     },
     {
       title: '',
