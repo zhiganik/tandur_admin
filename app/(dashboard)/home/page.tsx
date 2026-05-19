@@ -569,6 +569,16 @@ export default function HomePage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <Space size={8}>
+            {selectedRestaurant && (
+              <span style={{
+                display: 'inline-block',
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: selectedRestaurant.isActive ? '#52c41a' : '#ff4d4f',
+                flexShrink: 0,
+              }} />
+            )}
             <Title level={4} style={{ margin: 0 }}>{selectedRestaurant?.name ?? t.nav.home}</Title>
             <Button
               type="text"
