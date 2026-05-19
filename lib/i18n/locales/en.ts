@@ -101,7 +101,7 @@ const en = {
     deleteConfirm: 'Delete this user?',
     deleteSuccess: 'User deleted',
     deleteFailed: 'Failed to delete user',
-    searchPlaceholder: 'Search by name, email, phone...',
+    searchPlaceholder: 'Search by id, email, phone...',
     filterRole: 'All roles',
     resetPassword: 'Reset password',
     resetPasswordConfirm: 'Send password reset email to this admin?',
