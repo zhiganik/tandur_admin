@@ -12,6 +12,7 @@ import {
   usePatchRestaurant,
   useDeleteRestaurant,
 } from '@/lib/hooks/useRestaurants';
+import { useMe } from '@/lib/hooks/useMe';
 import RestaurantModal, { RestaurantFormValues } from '@/components/restaurants/RestaurantModal';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { Restaurant } from '@/types/api';
@@ -26,6 +27,8 @@ export default function RestaurantsPage() {
   const updateRestaurant = useUpdateRestaurant();
   const patchRestaurant = usePatchRestaurant();
   const deleteRestaurant = useDeleteRestaurant();
+  const { data: me } = useMe();
+  const isSuperAdmin = me?.roles.includes('SuperAdmin') ?? false;
   const { message } = App.useApp();
   const { t } = useI18n();
 
@@ -90,7 +93,8 @@ export default function RestaurantsPage() {
         <Switch
           checked={r.isActive}
           loading={togglingId === r.id}
-          onChange={(checked) => handleToggleActive(r.id, checked)}
+          disabled={!isSuperAdmin}
+          onChange={(checked) => isSuperAdmin && handleToggleActive(r.id, checked)}
         />
       ),
     },
@@ -110,19 +114,21 @@ export default function RestaurantsPage() {
             type="text"
             onClick={() => { setEditingItem(r); setModalOpen(true); }}
           />
-          <Popconfirm
-            title={t.restaurants.deleteConfirm}
-            onConfirm={() => handleDelete(r.id)}
-            okText={t.common.yes}
-            cancelText={t.common.no}
-          >
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              type="text"
-              loading={deleteRestaurant.isPending && deleteRestaurant.variables === r.id}
-            />
-          </Popconfirm>
+          {isSuperAdmin && (
+            <Popconfirm
+              title={t.restaurants.deleteConfirm}
+              onConfirm={() => handleDelete(r.id)}
+              okText={t.common.yes}
+              cancelText={t.common.no}
+            >
+              <Button
+                icon={<DeleteOutlined />}
+                danger
+                type="text"
+                loading={deleteRestaurant.isPending && deleteRestaurant.variables === r.id}
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -140,13 +146,15 @@ export default function RestaurantsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Title level={4} style={{ margin: 0 }}>{t.restaurants.title}</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => { setEditingItem(null); setModalOpen(true); }}
-        >
-          {t.restaurants.addButton}
-        </Button>
+        {isSuperAdmin && (
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => { setEditingItem(null); setModalOpen(true); }}
+          >
+            {t.restaurants.addButton}
+          </Button>
+        )}
       </div>
       <Table
         rowKey="id"

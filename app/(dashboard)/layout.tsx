@@ -15,7 +15,6 @@ import { useRestaurantStore } from '@/lib/store/restaurantStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { authApi } from '@/lib/api/auth';
 import { useMe } from '@/lib/hooks/useMe';
-import { useAllRestaurants } from '@/lib/hooks/useRestaurants';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import RestaurantSelector from '@/components/layout/RestaurantSelector';
 
@@ -38,9 +37,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { data: meData } = useMe();
-  const { data: restaurantsData } = useAllRestaurants();
   const selectedId = useRestaurantStore((s) => s.selectedId);
-  const selectedRestaurantName = restaurantsData?.data?.find((r) => r.id === selectedId)?.name ?? t.nav.home;
+  const selectedRestaurantName = meData?.restaurants?.find((r) => r.id === selectedId)?.name ?? t.nav.home;
   const meName = meData ? [meData.firstName, meData.lastName].filter(Boolean).join(' ') || null : null;
   const meEmail = meData?.email ?? null;
   const screens = Grid.useBreakpoint();

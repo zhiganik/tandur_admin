@@ -14,3 +14,26 @@ export const useDeleteUser = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 };
+
+export const useAssignRestaurant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ adminId, restaurantId }: { adminId: string; restaurantId: string }) =>
+      usersApi.assignRestaurant(adminId, restaurantId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+};
+
+export const useUnassignRestaurant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ adminId, restaurantId }: { adminId: string; restaurantId: string }) =>
+      usersApi.unassignRestaurant(adminId, restaurantId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+};
+
+export const useResetAdminPassword = () =>
+  useMutation({
+    mutationFn: usersApi.resetPassword,
+  });

@@ -34,6 +34,11 @@ export interface PagedResult<T> {
 }
 
 // Users
+export interface RestaurantRef {
+  id: string;
+  name: string;
+}
+
 export interface User {
   id: string;
   firstName: string | null;
@@ -45,6 +50,7 @@ export interface User {
   dateOfBirth: string | null;
   roles: string[];
   createdAt: string;
+  restaurants: RestaurantRef[];
 }
 
 export interface MeDto {
@@ -58,6 +64,7 @@ export interface MeDto {
   dateOfBirth: string | null;
   roles: string[];
   createdAt: string;
+  restaurants: RestaurantRef[];
 }
 
 export interface UpdateProfileRequest {
