@@ -1,5 +1,19 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Tech Stack
+
+- **Framework:** [Next.js 14](https://nextjs.org) (App Router, static export)
+- **Language:** [TypeScript](https://www.typescriptlang.org)
+- **UI library:** [Ant Design](https://ant.design) + [`@ant-design/icons`](https://ant.design/components/icon)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com)
+- **State management:** [Zustand](https://github.com/pmndrs/zustand)
+- **Data fetching:** [TanStack Query (React Query)](https://tanstack.com/query) + [Axios](https://axios-http.com)
+- **Forms & validation:** [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) (via `@hookform/resolvers`)
+- **Internationalization:** [next-intl](https://next-intl.dev)
+- **Drag and drop:** [`@hello-pangea/dnd`](https://github.com/hello-pangea/dnd)
+- **Dates:** [Day.js](https://day.js.org)
+- **Linting:** ESLint (`eslint-config-next`)
+
 ## Getting Started
 
 First, run the development server:
